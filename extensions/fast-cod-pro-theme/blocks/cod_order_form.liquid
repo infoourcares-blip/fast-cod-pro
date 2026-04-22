@@ -1,0 +1,246 @@
+{{ 'fast-cod-pro.css' | asset_url | stylesheet_tag }}
+<div
+  data-fast-cod-pro-root
+  data-accent="{{ block.settings.accent_color }}"
+  data-product-title="{{ block.settings.product.title | default: product.title | escape }}"
+  data-product-image="{{ block.settings.product.featured_image | image_url: width: 240 | default: product.featured_image | image_url: width: 240 }}"
+  data-variant-id="{{ block.settings.product.selected_or_first_available_variant.id | default: product.selected_or_first_available_variant.id }}"
+  data-currency="{{ cart.currency.iso_code | default: shop.currency }}"
+  data-price="{{ block.settings.product.selected_or_first_available_variant.price | money_without_currency | default: product.selected_or_first_available_variant.price | money_without_currency }}"
+  data-price-display="{{ block.settings.product.selected_or_first_available_variant.price | money | default: product.selected_or_first_available_variant.price | money }}"
+  data-stock="{{ block.settings.product.selected_or_first_available_variant.inventory_quantity | default: product.selected_or_first_available_variant.inventory_quantity | default: 8 }}"
+  data-config-url="/apps/fast-cod-pro/form-config?product_title={{ block.settings.product.title | default: product.title | url_encode }}&variant_id={{ block.settings.product.selected_or_first_available_variant.id | default: product.selected_or_first_available_variant.id }}&price={{ block.settings.product.selected_or_first_available_variant.price | money_without_currency | default: product.selected_or_first_available_variant.price | money_without_currency }}"
+  data-submit-url="/apps/fast-cod-pro/submit"
+>
+  <div class="fast-cod-pro-launcher-card fast-cod-pro-launcher-card--button-only">
+    <button class="fast-cod-pro-launcher" type="button" onclick="var root=this.closest('[data-fast-cod-pro-root]');var modal=root&&root.querySelector('.fast-cod-pro-modal');if(modal){modal.hidden=false;document.body.classList.add('fast-cod-pro-modal-open');}return false;">
+      <span class="fast-cod-pro-launcher-icon">🛒</span>
+      <span class="fast-cod-pro-launcher-label">Order Now - Cash on Delivery</span>
+    </button>
+  </div>
+  <div class="fast-cod-pro-modal" hidden>
+    <div class="fast-cod-pro-backdrop" data-fast-cod-close onclick="var modal=this.closest('.fast-cod-pro-modal');if(modal){modal.hidden=true;document.body.classList.remove('fast-cod-pro-modal-open');}"></div>
+    <div class="fast-cod-pro-sheet" role="dialog" aria-modal="true" aria-label="Cash on Delivery">
+      <div class="fast-cod-pro-sheet-head">
+        <div class="fast-cod-pro-sheet-title">
+          <span class="fast-cod-pro-home-icon">⌂</span>
+          <div class="fast-cod-pro-sheet-title-copy">
+            <strong>Cash on Delivery</strong>
+            <span>Fast checkout powered by Fast Cod Pro</span>
+          </div>
+        </div>
+        <button class="fast-cod-pro-close" type="button" data-fast-cod-close onclick="var modal=this.closest('.fast-cod-pro-modal');if(modal){modal.hidden=true;document.body.classList.remove('fast-cod-pro-modal-open');}">×</button>
+      </div>
+      <div class="fast-cod-pro-sheet-body">
+        <div class="fast-cod-pro-summary-card">
+          <div class="fast-cod-pro-summary-row">
+            {% assign fast_cod_image = block.settings.product.featured_image | default: product.featured_image %}
+            {% if fast_cod_image %}
+              {{ fast_cod_image | image_url: width: 240 | image_tag: class: 'fast-cod-pro-summary-image', alt: block.settings.product.title | default: product.title }}
+            {% else %}
+              <div class="fast-cod-pro-summary-image fast-cod-pro-summary-image--placeholder"></div>
+            {% endif %}
+            <div class="fast-cod-pro-summary-meta">
+              <span class="fast-cod-pro-summary-eyebrow">Order summary</span>
+              <strong>{{ block.settings.product.title | default: product.title }}</strong>
+              <span>{{ block.settings.product.selected_or_first_available_variant.price | money | default: product.selected_or_first_available_variant.price | money }}</span>
+              <div class="fast-cod-pro-qty-control">
+                <button type="button" data-qty-change="-1">−</button>
+                <input name="quantityDisplay" value="1" readonly>
+                <button type="button" data-qty-change="1">+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="fast-cod-pro-total-card">
+          <div class="fast-cod-pro-total-line"><span>Subtotal</span><strong class="fast-cod-pro-subtotal">{{ block.settings.product.selected_or_first_available_variant.price | money | default: product.selected_or_first_available_variant.price | money }}</strong></div>
+          <div class="fast-cod-pro-total-line"><span>Shipping</span><strong>Free</strong></div>
+          <div class="fast-cod-pro-total-line fast-cod-pro-total-line--grand"><span>Total</span><strong class="fast-cod-pro-total">{{ block.settings.product.selected_or_first_available_variant.price | money | default: product.selected_or_first_available_variant.price | money }}</strong></div>
+        </div>
+        <form class="fast-cod-pro-grid">
+          <h3 class="fast-cod-pro-form-title">Enter your shipping address</h3>
+          <label class="fast-cod-pro-field">
+            <span class="fast-cod-pro-label">Full name <em>*</em></span>
+            <span class="fast-cod-pro-input-wrap">
+              <span class="fast-cod-pro-input-icon">👤</span>
+              <input name="customerName" type="text" placeholder="Full name" required>
+            </span>
+          </label>
+          <label class="fast-cod-pro-field">
+            <span class="fast-cod-pro-label">Phone number <em>*</em></span>
+            <span class="fast-cod-pro-input-wrap">
+              <span class="fast-cod-pro-input-icon">☎</span>
+              <input name="phone" type="tel" placeholder="Phone" required>
+            </span>
+          </label>
+          <label class="fast-cod-pro-field">
+            <span class="fast-cod-pro-label">Address <em>*</em></span>
+            <span class="fast-cod-pro-input-wrap">
+              <span class="fast-cod-pro-input-icon">📍</span>
+              <input name="address1" type="text" placeholder="Address" required>
+            </span>
+          </label>
+          <label class="fast-cod-pro-field">
+            <span class="fast-cod-pro-label">Pincode <em>*</em></span>
+            <span class="fast-cod-pro-input-wrap">
+              <span class="fast-cod-pro-input-icon">#</span>
+              <input name="pincode" type="text" placeholder="Pincode" required>
+            </span>
+          </label>
+          <label class="fast-cod-pro-field">
+            <span class="fast-cod-pro-label">City</span>
+            <span class="fast-cod-pro-input-wrap">
+              <span class="fast-cod-pro-input-icon">🏙</span>
+              <input name="city" type="text" placeholder="City">
+            </span>
+          </label>
+          <input type="hidden" name="quantity" value="1">
+          <input type="hidden" name="variantId" value="{{ block.settings.product.selected_or_first_available_variant.id | default: product.selected_or_first_available_variant.id }}">
+          <input type="hidden" name="productTitle" value="{{ block.settings.product.title | default: product.title | escape }}">
+          <input type="hidden" name="price" value="{{ block.settings.product.selected_or_first_available_variant.price | money_without_currency | default: product.selected_or_first_available_variant.price | money_without_currency }}">
+          <button class="fast-cod-pro-button" type="submit">Complete Order - {{ block.settings.product.selected_or_first_available_variant.price | money | default: product.selected_or_first_available_variant.price | money }}</button>
+        </form>
+        <div class="fast-cod-pro-status" hidden></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="{{ 'fast-cod-pro.js' | asset_url }}" defer></script>
+<script>
+  (function () {
+    var root = document.currentScript.previousElementSibling.previousElementSibling;
+    if (!root || root.dataset.fastCodInitialized === "true") return;
+    root.dataset.fastCodInitialized = "true";
+
+    var modal = root.querySelector(".fast-cod-pro-modal");
+    var launcher = root.querySelector(".fast-cod-pro-launcher");
+    var closeButtons = root.querySelectorAll("[data-fast-cod-close]");
+    var form = root.querySelector(".fast-cod-pro-grid");
+    var status = root.querySelector(".fast-cod-pro-status");
+    var quantityInput = root.querySelector('input[name="quantity"]');
+    var quantityDisplay = root.querySelector('input[name="quantityDisplay"]');
+    var subtotal = root.querySelector(".fast-cod-pro-subtotal");
+    var total = root.querySelector(".fast-cod-pro-total");
+    var qtyButtons = root.querySelectorAll("[data-qty-change]");
+    var submitButton = root.querySelector(".fast-cod-pro-button");
+    var submitUrl = root.dataset.submitUrl;
+    var currency = root.dataset.currency || "INR";
+    var numericPrice = parseFloat(String(root.dataset.price || "0").replace(/,/g, "")) || 0;
+    var displayPrice = root.dataset.priceDisplay || ((currency ? currency + " " : "") + (root.dataset.price || "0"));
+
+    function hideNativeButtons() {
+      document.body.classList.add("fast-cod-pro-enabled");
+      var nearest = root.closest("section, .shopify-section, .product, .product__info-wrapper, .product__info-container, .product-form__buttons") || document;
+      nearest.querySelectorAll(".shopify-payment-button, .shopify-payment-button__button, .product-form__submit, product-form button[type='submit'], form[action*='/cart/add'] button[type='submit']").forEach(function (node) {
+        if (!root.contains(node)) node.style.display = "none";
+      });
+    }
+
+    function syncQuantity() {
+      var quantity = Math.max(1, Number(quantityInput.value || "1"));
+      var amount = numericPrice ? currency + " " + (numericPrice * quantity).toFixed(2) : displayPrice;
+      quantityInput.value = String(quantity);
+      quantityDisplay.value = String(quantity);
+      subtotal.textContent = amount;
+      total.textContent = amount;
+      submitButton.textContent = "Complete Order - " + amount;
+    }
+
+    function openModal() {
+      modal.hidden = false;
+      document.body.classList.add("fast-cod-pro-modal-open");
+    }
+
+    function closeModal() {
+      modal.hidden = true;
+      document.body.classList.remove("fast-cod-pro-modal-open");
+    }
+
+    hideNativeButtons();
+    setTimeout(hideNativeButtons, 600);
+    setTimeout(hideNativeButtons, 1500);
+
+    launcher.addEventListener("click", function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      openModal();
+    });
+
+    closeButtons.forEach(function (button) {
+      button.addEventListener("click", function (event) {
+        event.preventDefault();
+        closeModal();
+      });
+    });
+
+    qtyButtons.forEach(function (button) {
+      button.addEventListener("click", function () {
+        quantityInput.value = String(Math.max(1, Number(quantityInput.value || "1") + Number(button.getAttribute("data-qty-change") || "0")));
+        syncQuantity();
+      });
+    });
+
+    form.addEventListener("submit", async function (event) {
+      event.preventDefault();
+      status.hidden = false;
+      status.textContent = "Submitting COD order...";
+      status.style.color = "#0f172a";
+      submitButton.disabled = true;
+
+      var body = new URLSearchParams();
+      new FormData(form).forEach(function (value, key) {
+        body.append(key, value);
+      });
+
+      try {
+        var submitResponse = await fetch(submitUrl + "?" + body.toString(), { method: "GET", headers: { Accept: "application/json" } });
+        var responseText = await submitResponse.text();
+        var result = {};
+        try {
+          result = JSON.parse(responseText);
+        } catch (_error) {
+          result = { error: responseText || "Unexpected response from COD endpoint." };
+        }
+
+        if (!submitResponse.ok) {
+          status.textContent = result.error || "Submission failed.";
+          status.style.color = "#b91c1c";
+          return;
+        }
+
+        status.textContent = result.message || "COD request submitted.";
+        status.style.color = "#047857";
+        form.reset();
+        syncQuantity();
+      } catch (_error) {
+        status.textContent = "Could not submit COD order. Please try again.";
+        status.style.color = "#b91c1c";
+      } finally {
+        submitButton.disabled = false;
+      }
+    });
+
+    syncQuantity();
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "Fast COD Pro form",
+  "target": "section",
+  "settings": [
+    {
+      "type": "product",
+      "id": "product",
+      "label": "Product",
+      "autofill": true
+    },
+    {
+      "type": "color",
+      "id": "accent_color",
+      "label": "Accent color",
+      "default": "#1d4ed8"
+    }
+  ]
+}
+{% endschema %}

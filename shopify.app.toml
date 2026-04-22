@@ -1,0 +1,38 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+client_id = "15b7f4f0a93cc197d17bf7f4744a399e"
+name = "Fast Cod Pro"
+application_url = "https://generate-distance-composite-compared.trycloudflare.com"
+embedded = true
+handle = "fast-cod-pro"
+
+[webhooks]
+api_version = "2026-04"
+
+  [[webhooks.subscriptions]]
+  topics = [ "app/scopes_update" ]
+  uri = "/webhooks/app/scopes_update"
+
+  [[webhooks.subscriptions]]
+  topics = [ "app/uninstalled" ]
+  uri = "/webhooks/app/uninstalled"
+
+[access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+scopes = "read_products,write_products,read_orders,write_discounts,write_app_proxy,write_draft_orders"
+optional_scopes = [ ]
+use_legacy_install_flow = false
+
+[auth]
+redirect_urls = [
+  "https://generate-distance-composite-compared.trycloudflare.com/auth/callback",
+  "https://generate-distance-composite-compared.trycloudflare.com/auth/shopify/callback"
+]
+
+[build]
+automatically_update_urls_on_dev = true
+
+[app_proxy]
+url = "/proxy"
+prefix = "apps"
+subpath = "fast-cod-pro"

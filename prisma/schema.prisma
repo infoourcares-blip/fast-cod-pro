@@ -1,0 +1,151 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Note that some adapters may set a maximum length for the String type by default, please ensure your strings are long
+// enough when changing adapters.
+// See https://www.prisma.io/docs/orm/reference/prisma-schema-reference#string for more information
+datasource db {
+  provider = "sqlite"
+  url      = "file:dev.sqlite"
+}
+
+model Session {
+  id            String    @id
+  shop          String
+  state         String
+  isOnline      Boolean   @default(false)
+  scope         String?
+  expires       DateTime?
+  accessToken   String
+  userId        BigInt?
+  firstName     String?
+  lastName      String?
+  email         String?
+  accountOwner  Boolean   @default(false)
+  locale        String?
+  collaborator  Boolean?  @default(false)
+  emailVerified Boolean?  @default(false)
+  refreshToken        String?
+  refreshTokenExpires DateTime?
+}
+
+model FunnelProfile {
+  id                Int       @id @default(autoincrement())
+  shop              String    @unique
+  brandName         String
+  defaultCurrency   String    @default("USD")
+  supportEmail      String    @default("info.ourcares@gmail.com")
+  supportWhatsapp   String?
+  tutorialUrl       String    @default("https://www.youtube.com/results?search_query=shopify+cod+form+tutorial")
+  otpEnabled        Boolean   @default(true)
+  upsellEnabled     Boolean   @default(true)
+  fraudShieldLevel  String    @default("balanced")
+  formTitle         String    @default("Quick COD Checkout")
+  formSubtitle      String    @default("Fill your delivery details and place your COD order in seconds.")
+  submitButtonLabel String    @default("Place COD Order")
+  successMessage    String    @default("Your COD order request has been received.")
+  themeColor        String    @default("#1d4ed8")
+  launcherBgColor   String    @default("#111111")
+  launcherTextColor String    @default("#ffffff")
+  headerBgColor     String    @default("#111827")
+  headerTextColor   String    @default("#ffffff")
+  modalBgColor      String    @default("#f8fafc")
+  cardBgColor       String    @default("#ffffff")
+  textColor         String    @default("#0f172a")
+  mutedTextColor    String    @default("#475569")
+  inputBgColor      String    @default("#ffffff")
+  inputTextColor    String    @default("#111827")
+  inputBorderColor  String    @default("#d7dee8")
+  summaryBgColor    String    @default("#eef2f7")
+  buttonBgColor     String    @default("#111111")
+  buttonTextColor   String    @default("#ffffff")
+  borderRadius      Int       @default(18)
+  collectAddress    Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  offers            Offer[]
+  automations       Automation[]
+  fraudRules        FraudRule[]
+  formFields        CodFormField[]
+  submissions       CodSubmission[]
+}
+
+model Offer {
+  id              Int           @id @default(autoincrement())
+  funnelProfileId Int
+  title           String
+  type            String
+  trigger         String
+  upliftPercent   Float?
+  active          Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  funnelProfile   FunnelProfile @relation(fields: [funnelProfileId], references: [id], onDelete: Cascade)
+}
+
+model FraudRule {
+  id              Int           @id @default(autoincrement())
+  funnelProfileId Int
+  name            String
+  ruleType        String
+  threshold       String
+  action          String
+  active          Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  funnelProfile   FunnelProfile @relation(fields: [funnelProfileId], references: [id], onDelete: Cascade)
+}
+
+model Automation {
+  id              Int           @id @default(autoincrement())
+  funnelProfileId Int
+  name            String
+  destination     String
+  event           String
+  active          Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  funnelProfile   FunnelProfile @relation(fields: [funnelProfileId], references: [id], onDelete: Cascade)
+}
+
+model CodFormField {
+  id              Int           @id @default(autoincrement())
+  funnelProfileId Int
+  label           String
+  fieldKey        String
+  fieldType       String
+  placeholder     String?
+  required        Boolean       @default(true)
+  sortOrder       Int           @default(0)
+  active          Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  funnelProfile   FunnelProfile @relation(fields: [funnelProfileId], references: [id], onDelete: Cascade)
+}
+
+model CodSubmission {
+  id              Int           @id @default(autoincrement())
+  funnelProfileId Int
+  shop            String
+  status          String        @default("received")
+  customerName    String
+  phone           String
+  email           String?
+  address1        String?
+  city            String?
+  notes           String?
+  productTitle    String
+  variantId       String
+  quantity        Int           @default(1)
+  draftOrderId    String?
+  totalAmount     Float?
+  currency        String        @default("USD")
+  payloadJson     String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  funnelProfile   FunnelProfile @relation(fields: [funnelProfileId], references: [id], onDelete: Cascade)
+}
