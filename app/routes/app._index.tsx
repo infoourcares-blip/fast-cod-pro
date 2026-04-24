@@ -20,36 +20,7 @@ type ProductCard = {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { admin, session } = await authenticate.admin(request);
 
-  const response = await admin.graphql(
-    `#graphql
-      query FastCodProDashboard {
-        shop {
-          name
-          myshopifyDomain
-          primaryDomain {
-            url
-          }
-          plan {
-            displayName
-          }
-        }
-        products(first: 4, sortKey: UPDATED_AT, reverse: true) {
-          nodes {
-            id
-            title
-            status
-            totalInventory
-            variants(first: 1) {
-              nodes {
-                price
-              }
-            }
-          }
-        }
-      }`
-  );
-
-  const payload = (await response.json()) as {
+  let payload: {
     data?: {
       shop?: {
         name?: string;
@@ -63,11 +34,49 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
           title: string;
           status: string;
           totalInventory: number | null;
-          variants?: { nodes?: Array<{ price?: string | null }> } | null;
+          variants?: { nodes?: Array<{ price?: string | null }> | null } | null;
         }>;
       } | null;
     };
-  };
+  } = {};
+
+  try {
+    const response = await admin.graphql(
+      `#graphql
+        query FastCodProDashboard {
+          shop {
+            name
+            myshopifyDomain
+            primaryDomain {
+              url
+            }
+            plan {
+              displayName
+            }
+          }
+          products(first: 4, sortKey: UPDATED_AT, reverse: true) {
+            nodes {
+              id
+              title
+              status
+              totalInventory
+              variants(first: 1) {
+                nodes {
+                  price
+                }
+              }
+            }
+          }
+        }`
+    );
+
+    payload = (await response.json()) as typeof payload;
+  } catch (error) {
+    console.error("FastCodProDashboard query failed", {
+      shop: session.shop,
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
   const shop = payload.data?.shop ?? null;
   const summary = await getFunnelSummary(session.shop);
   const recentProducts: ProductCard[] = (payload.data?.products?.nodes ?? []).map(
@@ -76,7 +85,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       title: string;
       status: string;
       totalInventory: number | null;
-      variants?: { nodes?: Array<{ price?: string | null }> } | null;
+      variants?: { nodes?: Array<{ price?: string | null }> | null } | null;
     }) => ({
       id: product.id,
       title: product.title,
