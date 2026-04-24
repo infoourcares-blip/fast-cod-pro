@@ -2,7 +2,7 @@
 
 client_id = "15b7f4f0a93cc197d17bf7f4744a399e"
 name = "Fast Cod Pro"
-application_url = "https://generate-distance-composite-compared.trycloudflare.com"
+application_url = "https://app.fastcodpro.com"
 embedded = true
 handle = "fast-cod-pro"
 
@@ -25,8 +25,8 @@ use_legacy_install_flow = false
 
 [auth]
 redirect_urls = [
-  "https://generate-distance-composite-compared.trycloudflare.com/auth/callback",
-  "https://generate-distance-composite-compared.trycloudflare.com/auth/shopify/callback"
+  "https://app.fastcodpro.com/auth/callback",
+  "https://app.fastcodpro.com/auth/shopify/callback"
 ]
 
 [build]
