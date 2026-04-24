@@ -18,7 +18,7 @@ It now includes:
 - React Router 7
 - `@shopify/shopify-app-react-router`
 - Shopify App Bridge
-- Prisma with SQLite session storage
+- Prisma with PostgreSQL session storage
 - Vite + TypeScript
 
 ## Local setup
@@ -35,7 +35,7 @@ npm install
 cp .env.example .env
 ```
 
-3. Generate Prisma client and run local development:
+3. Set `DATABASE_URL` to a PostgreSQL database, then generate Prisma client and run local development:
 
 ```bash
 npx prisma generate
