@@ -331,13 +331,13 @@
           result = { error: responseText || "Unexpected response from COD endpoint." };
         }
 
-        if (!submitResponse.ok) {
-          status.textContent = result.error || "Submission failed.";
+        if (!submitResponse.ok || result.orderCreated === false) {
+          status.textContent = result.error || result.fallbackReason || result.message || "Submission failed.";
           status.style.color = "#b91c1c";
           return;
         }
 
-        status.textContent = result.message || "COD request submitted.";
+        status.textContent = result.message || (result.orderName ? "Order " + result.orderName + " created." : "COD order submitted.");
         status.style.color = "#047857";
         form.reset();
         syncQuantity(container, currency, numericPrice, displayPrice);

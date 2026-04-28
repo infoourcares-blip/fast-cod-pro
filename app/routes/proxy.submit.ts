@@ -3,6 +3,35 @@ import prisma from "../db.server";
 import { getFunnelProfile } from "../lib/funnel.server";
 import { authenticate } from "../shopify.server";
 
+type GraphqlUserError = {
+  field?: string[] | string | null;
+  message?: string | null;
+};
+
+type GraphqlTopLevelError = {
+  message?: string | null;
+};
+
+function formatGraphqlErrors(
+  userErrors: GraphqlUserError[] = [],
+  topLevelErrors: GraphqlTopLevelError[] = []
+) {
+  const formattedUserErrors = userErrors
+    .map((error) => {
+      const field = Array.isArray(error.field)
+        ? error.field.join(".")
+        : error.field;
+      return [field, error.message].filter(Boolean).join(": ");
+    })
+    .filter(Boolean);
+
+  const formattedTopLevelErrors = topLevelErrors
+    .map((error) => error.message)
+    .filter(Boolean);
+
+  return [...formattedUserErrors, ...formattedTopLevelErrors].join(" | ");
+}
+
 async function handleSubmission(
   request: Request,
   getValue: (key: string) => FormDataEntryValue | string | null
@@ -111,6 +140,7 @@ async function handleSubmission(
       );
 
       const draftPayload = (await draftOrderResponse.json()) as {
+        errors?: Array<{ message?: string }>;
         data?: {
           draftOrderCreate?: {
             draftOrder?: {
@@ -123,14 +153,21 @@ async function handleSubmission(
                 } | null;
               } | null;
             } | null;
-            userErrors?: Array<{ message?: string }>;
+            userErrors?: GraphqlUserError[];
           } | null;
         };
       };
 
       const userErrors = draftPayload.data?.draftOrderCreate?.userErrors ?? [];
-      if (userErrors.length) {
-        draftError = userErrors[0]?.message || "Draft order creation failed.";
+      const graphqlError = formatGraphqlErrors(userErrors, draftPayload.errors);
+      if (graphqlError) {
+        draftError = graphqlError || "Draft order creation failed.";
+        console.error("Fast COD Pro draft order create failed", {
+          shop: session.shop,
+          draftError,
+          productTitle,
+          variantId
+        });
       } else {
         draftOrder = draftPayload.data?.draftOrderCreate?.draftOrder;
       }
@@ -165,6 +202,7 @@ async function handleSubmission(
         );
 
         const completePayload = (await completeResponse.json()) as {
+          errors?: Array<{ message?: string }>;
           data?: {
             draftOrderComplete?: {
               draftOrder?: {
@@ -174,14 +212,20 @@ async function handleSubmission(
                   name?: string | null;
                 } | null;
               } | null;
-              userErrors?: Array<{ message?: string }>;
+              userErrors?: GraphqlUserError[];
             } | null;
           };
         };
 
         const completeErrors = completePayload.data?.draftOrderComplete?.userErrors ?? [];
-        if (completeErrors.length) {
-          draftError = completeErrors[0]?.message || "Order creation from draft failed.";
+        const graphqlError = formatGraphqlErrors(completeErrors, completePayload.errors);
+        if (graphqlError) {
+          draftError = graphqlError || "Order creation from draft failed.";
+          console.error("Fast COD Pro draft order complete failed", {
+            shop: session.shop,
+            draftOrderId: draftOrder.id,
+            draftError
+          });
         } else {
           completedOrder = completePayload.data?.draftOrderComplete?.draftOrder?.order;
         }
@@ -217,15 +261,18 @@ async function handleSubmission(
     });
 
     if (!completedOrder?.id) {
-      return Response.json({
-        ok: true,
-        message: draftOrder?.id
-          ? "COD request received. Draft order was created, but the Shopify order needs manual review."
-          : "COD request received. Draft order will be reviewed manually.",
-        draftOrderCreated: Boolean(draftOrder?.id),
-        orderCreated: false,
-        fallbackReason: draftError
-      });
+      return Response.json(
+        {
+          error: draftError || "Shopify order could not be created.",
+          message: draftOrder?.id
+            ? "Draft order was created, but Shopify did not convert it to an order."
+            : "COD request could not create a Shopify order.",
+          draftOrderCreated: Boolean(draftOrder?.id),
+          orderCreated: false,
+          fallbackReason: draftError
+        },
+        { status: 422 }
+      );
     }
 
     return Response.json({
