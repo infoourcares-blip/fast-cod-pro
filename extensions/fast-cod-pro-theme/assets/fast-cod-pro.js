@@ -124,9 +124,9 @@
     return (
       '<div class="fast-cod-pro-modal" hidden>' +
       '<div class="fast-cod-pro-backdrop" data-fast-cod-close onclick="var modal=this.closest(\'.fast-cod-pro-modal\');if(modal){modal.hidden=true;document.body.classList.remove(\'fast-cod-pro-modal-open\');}"></div>' +
-      '<div class="fast-cod-pro-sheet" role="dialog" aria-modal="true" aria-label="Cash on Delivery">' +
+      '<div class="fast-cod-pro-sheet" role="dialog" aria-modal="true" aria-label="Fast COD Pro order form">' +
       '<div class="fast-cod-pro-sheet-head">' +
-      '<div class="fast-cod-pro-sheet-title"><span class="fast-cod-pro-home-icon">⌂</span><strong>Cash on Delivery</strong></div>' +
+      '<div class="fast-cod-pro-sheet-title"><span class="fast-cod-pro-home-icon">⌂</span><strong>Fast COD Pro</strong></div>' +
       '<button class="fast-cod-pro-close" type="button" data-fast-cod-close onclick="var modal=this.closest(\'.fast-cod-pro-modal\');if(modal){modal.hidden=true;document.body.classList.remove(\'fast-cod-pro-modal-open\');}">×</button>' +
       "</div>" +
       '<div class="fast-cod-pro-sheet-body">' +
@@ -150,13 +150,13 @@
       '<div class="fast-cod-pro-total-line fast-cod-pro-total-line--grand"><span>Total</span><strong class="fast-cod-pro-total">' + escapeHtml(displayPrice) + "</strong></div>' +
       "</div>" +
       '<div class="fast-cod-pro-grid" data-fast-cod-form>' +
-      '<h3 class="fast-cod-pro-form-title">Enter your shipping address</h3>' +
+      '<h3 class="fast-cod-pro-form-title">Fast COD Pro order form</h3>' +
       defaultFields().map(fieldMarkup).join("") +
       '<input type="hidden" name="quantity" value="1">' +
       '<input type="hidden" name="variantId" value="' + escapeHtml(variantId) + '">' +
       '<input type="hidden" name="productTitle" value="' + escapeHtml(productTitle) + '">' +
       '<input type="hidden" name="price" value="' + escapeHtml(price) + '">' +
-      '<button class="fast-cod-pro-button" type="button">Complete Order - ' + escapeHtml(displayPrice) + "</button>" +
+      '<button class="fast-cod-pro-button" type="button">Place Fast COD Pro Order - ' + escapeHtml(displayPrice) + "</button>" +
       "</div>" +
       '<div class="fast-cod-pro-status" hidden></div>' +
       "</div>" +
@@ -178,7 +178,7 @@
     quantityDisplay.value = String(quantity);
     subtotal.textContent = amount;
     total.textContent = amount;
-    submitButton.textContent = "Complete Order - " + amount;
+    submitButton.textContent = "Place Fast COD Pro Order - " + amount;
   }
 
   function resetCodForm(container) {
@@ -211,7 +211,7 @@
       var existingButton = form.querySelector(".fast-cod-pro-button");
 
       form.innerHTML =
-        '<h3 class="fast-cod-pro-form-title">' + escapeHtml(formConfig.title || "Enter your shipping address") + "</h3>" +
+        '<h3 class="fast-cod-pro-form-title">' + escapeHtml(formConfig.title || "Fast COD Pro order form") + "</h3>" +
         fieldHtml +
         existingQuantity.outerHTML +
         existingVariant.outerHTML +
@@ -219,9 +219,9 @@
         existingPrice.outerHTML +
         existingButton.outerHTML;
 
-      if (title) title.textContent = formConfig.title || "Enter your shipping address";
-      if (subtitle) subtitle.textContent = formConfig.subtitle || "Fast checkout powered by Fast Cod Pro";
-      if (launcherLabel) launcherLabel.textContent = formConfig.submitButtonLabel || "Order Now - Cash on Delivery";
+      if (title) title.textContent = formConfig.title || "Fast COD Pro order form";
+      if (subtitle) subtitle.textContent = formConfig.subtitle || "Fast cash-on-delivery checkout";
+      if (launcherLabel) launcherLabel.textContent = formConfig.submitButtonLabel || "Order with Fast COD Pro";
       if (status) status.textContent = "";
       applyDesign(container, formConfig.design, accentColor);
     } catch (error) {
@@ -251,10 +251,10 @@
 
     var launcher = container.querySelector(".fast-cod-pro-launcher");
     if (!launcher) {
-      container.innerHTML = '<div class="fast-cod-pro-launcher-card fast-cod-pro-launcher-card--button-only"><button class="fast-cod-pro-launcher" type="button" onclick="var root=this.closest(\\'[data-fast-cod-pro-root]\\');var modal=root&&root.querySelector(\\'.fast-cod-pro-modal\\');if(modal){modal.hidden=false;document.body.classList.add(\\'fast-cod-pro-modal-open\\');}return false;"><span class="fast-cod-pro-launcher-icon">🛒</span><span class="fast-cod-pro-launcher-label">Order Now - Cash on Delivery</span></button></div>';
+      container.innerHTML = '<div class="fast-cod-pro-launcher-card fast-cod-pro-launcher-card--button-only"><button class="fast-cod-pro-launcher" type="button" onclick="var root=this.closest(\\'[data-fast-cod-pro-root]\\');var modal=root&&root.querySelector(\\'.fast-cod-pro-modal\\');if(modal){modal.hidden=false;document.body.classList.add(\\'fast-cod-pro-modal-open\\');}return false;"><span class="fast-cod-pro-launcher-icon">🛒</span><span class="fast-cod-pro-launcher-label">Order with Fast COD Pro</span></button></div>';
       launcher = container.querySelector(".fast-cod-pro-launcher");
     } else if (!launcher.querySelector(".fast-cod-pro-launcher-label")) {
-      var label = launcher.textContent || "Order Now - Cash on Delivery";
+      var label = launcher.textContent || "Order with Fast COD Pro";
       launcher.innerHTML = '<span class="fast-cod-pro-launcher-icon">🛒</span><span class="fast-cod-pro-launcher-label">' + escapeHtml(label) + "</span>";
     }
 
