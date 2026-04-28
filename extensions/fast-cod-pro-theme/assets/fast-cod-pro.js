@@ -181,6 +181,17 @@
     submitButton.textContent = "Complete Order - " + amount;
   }
 
+  function resetCodForm(container) {
+    container.querySelectorAll(".fast-cod-pro-grid input, .fast-cod-pro-grid textarea, .fast-cod-pro-grid select").forEach(function (field) {
+      if (!field.name || ["quantity", "variantId", "productTitle", "price"].includes(field.name)) return;
+      if (field.type === "checkbox" || field.type === "radio") {
+        field.checked = false;
+      } else {
+        field.value = "";
+      }
+    });
+  }
+
   async function enhanceFields(container, endpoint, accentColor) {
     try {
       var response = await fetch(endpoint, { headers: { Accept: "application/json" } });
@@ -339,7 +350,7 @@
 
         status.textContent = result.message || (result.orderName ? "Order " + result.orderName + " created." : "COD order submitted.");
         status.style.color = "#047857";
-        form.reset();
+        resetCodForm(container);
         syncQuantity(container, currency, numericPrice, displayPrice);
       } catch (_error) {
         status.textContent = "Could not submit COD order. Please try again.";

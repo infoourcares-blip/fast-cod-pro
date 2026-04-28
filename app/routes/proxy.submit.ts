@@ -49,6 +49,7 @@ async function handleSubmission(
     const phone = String(getValue("phone") || "").trim();
     const email = String(getValue("email") || "").trim();
     const address1 = String(getValue("address1") || "").trim();
+    const pincode = String(getValue("pincode") || "").trim();
     const city = String(getValue("city") || "").trim();
     const notes = String(getValue("notes") || "").trim();
     const productTitle = String(getValue("productTitle") || "").trim();
@@ -120,7 +121,9 @@ async function handleSubmission(
               shippingAddress: profile.collectAddress
                 ? {
                     address1: address1 || undefined,
-                    city: city || undefined
+                    city: city || undefined,
+                    phone: phone || undefined,
+                    zip: pincode || undefined
                   }
                 : undefined,
               lineItems: [
@@ -132,6 +135,7 @@ async function handleSubmission(
               customAttributes: [
                 { key: "customer_name", value: customerName },
                 { key: "phone", value: phone },
+                { key: "payment_method", value: "Cash on Delivery" },
                 { key: "source", value: "fast_cod_pro_theme_form" }
               ]
             }
@@ -176,11 +180,11 @@ async function handleSubmission(
     }
 
     if (draftOrder?.id) {
-      try {
+      const completeDraftOrder = async (paymentPending: boolean) => {
         const completeResponse = await admin.graphql(
           `#graphql
-            mutation FastCodProCompleteDraftOrder($id: ID!) {
-              draftOrderComplete(id: $id, paymentPending: true) {
+            mutation FastCodProCompleteDraftOrder($id: ID!, $paymentPending: Boolean!) {
+              draftOrderComplete(id: $id, paymentPending: $paymentPending, sourceName: "fast_cod_pro") {
                 draftOrder {
                   id
                   order {
@@ -196,7 +200,8 @@ async function handleSubmission(
             }`,
           {
             variables: {
-              id: draftOrder.id
+              id: draftOrder.id,
+              paymentPending
             }
           }
         );
@@ -217,17 +222,41 @@ async function handleSubmission(
           };
         };
 
-        const completeErrors = completePayload.data?.draftOrderComplete?.userErrors ?? [];
-        const graphqlError = formatGraphqlErrors(completeErrors, completePayload.errors);
-        if (graphqlError) {
-          draftError = graphqlError || "Order creation from draft failed.";
-          console.error("Fast COD Pro draft order complete failed", {
+        const completeErrors =
+          completePayload.data?.draftOrderComplete?.userErrors ?? [];
+        const graphqlError = formatGraphqlErrors(
+          completeErrors,
+          completePayload.errors
+        );
+
+        return {
+          order: completePayload.data?.draftOrderComplete?.draftOrder?.order,
+          error: graphqlError
+        };
+      };
+
+      try {
+        const pendingResult = await completeDraftOrder(true);
+        if (pendingResult.error) {
+          console.error("Fast COD Pro payment-pending draft complete failed", {
             shop: session.shop,
             draftOrderId: draftOrder.id,
-            draftError
+            draftError: pendingResult.error
           });
+          const paidFallbackResult = await completeDraftOrder(false);
+          if (paidFallbackResult.error) {
+            draftError = paidFallbackResult.error || pendingResult.error;
+            console.error("Fast COD Pro paid fallback draft complete failed", {
+              shop: session.shop,
+              draftOrderId: draftOrder.id,
+              draftError
+            });
+          } else {
+            completedOrder = paidFallbackResult.order;
+            draftError = null;
+          }
         } else {
-          completedOrder = completePayload.data?.draftOrderComplete?.draftOrder?.order;
+          completedOrder = pendingResult.order;
         }
       } catch (error) {
         draftError = error instanceof Error ? error.message : "Order creation from draft failed.";
@@ -244,7 +273,7 @@ async function handleSubmission(
         email: email || null,
         address1: address1 || null,
         city: city || null,
-        notes: notes || null,
+        notes: [notes, pincode ? `Pincode: ${pincode}` : ""].filter(Boolean).join("\n") || null,
         productTitle,
         variantId,
         quantity,
