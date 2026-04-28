@@ -10,6 +10,10 @@ type ActionData = {
   message: string;
 } | null;
 
+type BillingState = {
+  hasActivePayment: boolean;
+};
+
 const planCatalog = [
   {
     id: "free",
@@ -82,10 +86,16 @@ const billingTestMode = process.env.SHOPIFY_BILLING_TEST === "true";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { billing, session } = await authenticate.admin(request);
-  const billingState = await billing.check({
-    plans: [LAUNCH_PLAN, SCALE_PLAN, EMPIRE_PLAN],
-    isTest: billingTestMode
-  });
+  let billingState: BillingState = { hasActivePayment: false };
+
+  try {
+    billingState = await billing.check({
+      plans: [LAUNCH_PLAN, SCALE_PLAN, EMPIRE_PLAN],
+      isTest: billingTestMode
+    });
+  } catch (error) {
+    console.error("Unable to check Shopify billing status", error);
+  }
 
   const summary = await getFunnelSummary(session.shop);
 
@@ -111,11 +121,19 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       return { status: "error" as const, message: "Choose a billing plan." };
     }
 
-    await billing.request({
-      plan,
-      isTest: billingTestMode,
-      returnUrl: `${process.env.SHOPIFY_APP_URL}/app/billing`
-    });
+    try {
+      await billing.request({
+        plan,
+        isTest: billingTestMode,
+        returnUrl: `${process.env.SHOPIFY_APP_URL}/app/billing`
+      });
+    } catch (error) {
+      console.error("Unable to start Shopify billing request", error);
+      return {
+        status: "error" as const,
+        message: "Shopify billing could not be started for this store. Try again after the app is installed from a fresh session.",
+      };
+    }
   }
 
   return { status: "error" as const, message: "Unknown billing action." };
