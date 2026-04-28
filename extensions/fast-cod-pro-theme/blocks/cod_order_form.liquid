@@ -109,7 +109,7 @@
           <input type="hidden" name="variantId" value="{{ fast_cod_variant.id }}">
           <input type="hidden" name="productTitle" value="{{ fast_cod_product.title | escape }}">
           <input type="hidden" name="price" value="{{ fast_cod_price_amount }}">
-          <button class="fast-cod-pro-button" type="button">Place Fast COD Pro Order - {{ fast_cod_variant.price | money }}</button>
+          <button class="fast-cod-pro-button" type="button" onclick="window.FastCodProSubmit&&window.FastCodProSubmit(this,event)">Place Fast COD Pro Order - {{ fast_cod_variant.price | money }}</button>
         </div>
         <div class="fast-cod-pro-status" hidden></div>
       </div>

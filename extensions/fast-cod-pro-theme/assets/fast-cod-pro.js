@@ -167,7 +167,7 @@
       '<input type="hidden" name="variantId" value="' + escapeHtml(variantId) + '">' +
       '<input type="hidden" name="productTitle" value="' + escapeHtml(productTitle) + '">' +
       '<input type="hidden" name="price" value="' + escapeHtml(price) + '">' +
-      '<button class="fast-cod-pro-button" type="button">Place Fast COD Pro Order - ' + escapeHtml(displayPrice) + "</button>" +
+      '<button class="fast-cod-pro-button" type="button" onclick="window.FastCodProSubmit&&window.FastCodProSubmit(this,event)">Place Fast COD Pro Order - ' + escapeHtml(displayPrice) + "</button>" +
       "</div>" +
       '<div class="fast-cod-pro-status" hidden></div>' +
       "</div>" +
@@ -333,6 +333,7 @@
     var form = container.querySelector(".fast-cod-pro-grid");
     var status = container.querySelector(".fast-cod-pro-status");
     var qtyButtons = container.querySelectorAll("[data-qty-change]");
+    var submitInProgress = false;
 
     function collectFormData() {
       var body = new URLSearchParams();
@@ -376,9 +377,12 @@
     });
 
     async function submitCodOrder(event) {
-      event.preventDefault();
-      event.stopPropagation();
+      if (event && typeof event.preventDefault === "function") event.preventDefault();
+      if (event && typeof event.stopPropagation === "function") event.stopPropagation();
+      if (submitInProgress) return;
       var submitButton = container.querySelector(".fast-cod-pro-button");
+      if (!submitButton) return;
+      submitInProgress = true;
       status.hidden = false;
       status.textContent = "Submitting COD order...";
       status.style.color = "#0f172a";
@@ -424,15 +428,30 @@
         status.textContent = error && error.message ? error.message : "Could not submit COD order. Please try again.";
         status.style.color = "#b91c1c";
       } finally {
+        submitInProgress = false;
         submitButton.disabled = false;
       }
     }
 
+    container.__fastCodProSubmit = submitCodOrder;
+
+    function bindSubmitButton() {
+      var submitButton = container.querySelector(".fast-cod-pro-button");
+      if (!submitButton) return;
+      submitButton.setAttribute("type", "button");
+      submitButton.setAttribute("onclick", "window.FastCodProSubmit&&window.FastCodProSubmit(this,event)");
+      if (submitButton.dataset.fastCodClickBound === "true") return;
+      submitButton.dataset.fastCodClickBound = "true";
+      submitButton.addEventListener("click", submitCodOrder);
+      submitButton.addEventListener("touchend", submitCodOrder, { passive: false });
+    }
+
     container.addEventListener("click", function (event) {
-      if (event.target.closest(".fast-cod-pro-button")) {
+      var target = event.target && event.target.closest ? event.target.closest(".fast-cod-pro-button") : null;
+      if (target) {
         submitCodOrder(event);
       }
-    });
+    }, true);
 
     form.addEventListener("keydown", function (event) {
       if (event.key === "Enter") {
@@ -441,6 +460,7 @@
     });
 
     syncQuantity(container, currency, numericPrice, displayPrice);
+    bindSubmitButton();
     fetchProductData(container).then(function (productState) {
       if (productState) {
         numericPrice = productState.amount;
@@ -450,8 +470,17 @@
     });
     enhanceFields(container, endpoint, accentColor).then(function () {
       syncQuantity(container, currency, numericPrice, displayPrice);
+      bindSubmitButton();
     });
   }
+
+  window.FastCodProSubmit = function (button, event) {
+    var container = button && button.closest ? button.closest("[data-fast-cod-pro-root]") : null;
+    if (container && typeof container.__fastCodProSubmit === "function") {
+      container.__fastCodProSubmit(event || window.event || { preventDefault: function () {}, stopPropagation: function () {} });
+    }
+    return false;
+  };
 
   document.querySelectorAll("[data-fast-cod-pro-root]").forEach(function (node) {
     init(node).catch(function (error) {
