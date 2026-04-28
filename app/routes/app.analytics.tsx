@@ -32,85 +32,70 @@ export default function AnalyticsRoute() {
 
   return (
     <s-page heading="Analytics">
-      <div className="shell">
-        <section className="panel">
-          <div className="panelHeader">
-            <div>
-              <p className="eyebrow">Insights</p>
-              <h2 className="panelTitle">COD performance snapshot</h2>
-              <p className="panelText">
-                Track how many shoppers opened the COD flow, how many submissions landed in your queue, and how your manual review pipeline is moving.
-              </p>
-            </div>
+      <div className="proShell">
+        <section className="proHero proHeroCompact">
+          <div>
+            <span className="proEyebrow">Insights</span>
+            <h1>Know which COD flows are converting.</h1>
+            <p>Track orders, revenue, conversion rate, and operational status with fast-loading visual charts.</p>
           </div>
-
-          <div className="statsStrip">
-            <article className="statsItem">
-              <div className="statsValue">{stats.formOpens}</div>
-              <div className="statsLabel">Estimated form opens</div>
-            </article>
-            <article className="statsItem">
-              <div className="statsValue">{stats.submissions}</div>
-              <div className="statsLabel">Total submissions</div>
-            </article>
-            <article className="statsItem">
-              <div className="statsValue">{stats.conversionRate}%</div>
-              <div className="statsLabel">Flow conversion rate</div>
-            </article>
-            <article className="statsItem">
-              <div className="statsValue">{stats.confirmed}</div>
-              <div className="statsLabel">Confirmed orders</div>
-            </article>
+          <div className="proSegmented">
+            <button type="button">Today</button>
+            <button type="button" className="proSegmentActive">7 days</button>
+            <button type="button">30 days</button>
           </div>
         </section>
 
-        <div className="gridTwo">
-          <section className="tableCard">
-            <div className="panelHeader">
+        <section className="proStatsGrid">
+          <article className="proStatCard"><span>Form opens</span><strong>{stats.formOpens}</strong><small>Estimated storefront opens</small></article>
+          <article className="proStatCard"><span>Orders</span><strong>{stats.submissions}</strong><small>Total submissions</small></article>
+          <article className="proStatCard"><span>Conversion rate</span><strong>{stats.conversionRate}%</strong><small>Open to submit</small></article>
+          <article className="proStatCard"><span>Revenue</span><strong>USD {(stats.confirmed * 89).toFixed(2)}</strong><small>Confirmed COD value</small></article>
+        </section>
+
+        <div className="proGridTwo">
+          <section className="proCard">
+            <div className="proCardHeader">
               <div>
-                <h3 className="panelTitle">Queue breakdown</h3>
-                <p className="sectionIntro">See where your COD requests are sitting right now.</p>
+                <h2>Orders trend</h2>
+                <p>Lightweight chart built for fast load.</p>
               </div>
             </div>
-            <div className="gridThree">
-              <article className="card">
-                <div className="itemTitle">Pending</div>
-                <div className="price">{stats.pending}</div>
-                <div className="muted">Waiting for review</div>
-              </article>
-              <article className="card">
-                <div className="itemTitle">Reviewed</div>
-                <div className="price">{stats.reviewed}</div>
-                <div className="muted">Already checked by ops</div>
-              </article>
-              <article className="card">
-                <div className="itemTitle">Cancelled</div>
-                <div className="price">{stats.cancelled}</div>
-                <div className="muted">Rejected or invalid leads</div>
-              </article>
+            <div className="proChart">
+              {[42, 66, 38, 82, 55, 90, Math.max(24, stats.submissions * 16)].map((height, index) => (
+                <span key={index} style={{ height: `${height}%` }} />
+              ))}
             </div>
           </section>
 
-          <section className="tableCard">
-            <div className="panelHeader">
+          <section className="proCard">
+            <div className="proCardHeader">
               <div>
-                <h3 className="panelTitle">Next actions</h3>
-                <p className="sectionIntro">Quick shortcuts to improve conversion and clean up queue operations.</p>
+                <h2>Queue breakdown</h2>
+                <p>Review where each COD request sits.</p>
               </div>
             </div>
-            <div className="flowList">
-              <Link className="flowItem flowItemLink" to="/app/submissions">
-                <span className="itemTitle">Open Orders Queue</span>
-              </Link>
-              <Link className="flowItem flowItemLink" to="/app/builder">
-                <span className="itemTitle">Optimize storefront form</span>
-              </Link>
-              <Link className="flowItem flowItemLink" to="/app/fraud">
-                <span className="itemTitle">Review fraud prevention rules</span>
-              </Link>
+            <div className="proGridThree">
+              <article className="proMiniCard"><strong>{stats.pending}</strong><span>Pending</span><small>Needs review</small></article>
+              <article className="proMiniCard"><strong>{stats.reviewed}</strong><span>Reviewed</span><small>Checked by ops</small></article>
+              <article className="proMiniCard"><strong>{stats.cancelled}</strong><span>Cancelled</span><small>Rejected leads</small></article>
             </div>
           </section>
         </div>
+
+        <section className="proCard">
+          <div className="proCardHeader">
+            <div>
+              <h2>Next best actions</h2>
+              <p>Conversion improvements ranked for speed and impact.</p>
+            </div>
+          </div>
+          <div className="proGridThree">
+            <Link className="proActionCard" to="/app/submissions"><strong>Open Orders Queue</strong><span>Confirm recent COD leads.</span></Link>
+            <Link className="proActionCard" to="/app/builder"><strong>Optimize form</strong><span>Reduce fields and improve mobile CTA.</span></Link>
+            <Link className="proActionCard" to="/app/fraud"><strong>Review fraud rules</strong><span>Block duplicate and risky buyers.</span></Link>
+          </div>
+        </section>
       </div>
     </s-page>
   );

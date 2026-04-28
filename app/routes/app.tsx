@@ -16,15 +16,17 @@ export default function App() {
   const { apiKey } = useLoaderData<typeof loader>();
   const links = [
     { to: "/app", label: "Dashboard", level: "primary", icon: "dashboard" },
-    { to: "/app/launch", label: "Launch Readiness", level: "secondary", icon: "launch" },
-    { to: "/app/submissions", label: "Orders Queue", level: "secondary", icon: "queue" },
-    { to: "/app/builder", label: "Form Designer", level: "secondary", icon: "form" },
-    { to: "/app/fraud", label: "Fraud Prevention", level: "secondary", icon: "shield" },
-    { to: "/app/automations", label: "Delivery Success", level: "secondary", icon: "delivery" },
-    { to: "/app/offers", label: "Sales Booster", level: "secondary", icon: "sales" },
+    { to: "/app/builder", label: "Form Builder", level: "secondary", icon: "form" },
+    { to: "/app/settings", label: "Form Settings", level: "secondary", icon: "settings" },
+    { to: "/app/offers", label: "Upsell / Downsell", level: "secondary", icon: "sales" },
+    { to: "/app/shipping", label: "Shipping Settings", level: "secondary", icon: "delivery" },
+    { to: "/app/integrations", label: "Integrations", level: "secondary", icon: "settings" },
     { to: "/app/analytics", label: "Analytics", level: "secondary", icon: "analytics" },
-    { to: "/app/settings", label: "Settings & Integrations", level: "secondary", icon: "settings" },
+    { to: "/app/abandoned", label: "Abandoned Orders", level: "secondary", icon: "queue" },
+    { to: "/app/fraud", label: "Fraud Protection", level: "secondary", icon: "shield" },
+    { to: "/app/submissions", label: "Orders Queue", level: "secondary", icon: "queue" },
     { to: "/app/billing", label: "Billing Plans", level: "secondary", icon: "billing" },
+    { to: "/app/launch", label: "Launch Readiness", level: "secondary", icon: "launch" },
   ] as const;
 
   return (
@@ -33,12 +35,11 @@ export default function App() {
         <div className="appLayout">
           <aside className="sidebar">
             <div className="sidebarBrand">
-              <div className="hamburgerBadge" aria-hidden="true">
-                <span />
-                <span />
-                <span />
+              <div className="brandMark" aria-hidden="true">FC</div>
+              <div>
+                <div className="sidebarBrandTitle">Fast COD Pro</div>
+                <div className="sidebarBrandSub">Conversion OS</div>
               </div>
-              <div className="sidebarBrandTitle">Fast Cod Pro</div>
             </div>
             <nav className="sideMenu">
               {links.map((link) => (

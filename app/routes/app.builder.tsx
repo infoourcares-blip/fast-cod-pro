@@ -162,7 +162,65 @@ export default function BuilderRoute() {
 
   return (
     <s-page heading="COD Form Builder">
-      <div className="shell">
+      <div className="proShell">
+        <section className="proHero proHeroCompact">
+          <div>
+            <span className="proEyebrow">Drag and drop builder</span>
+            <h1>Build a high-converting COD form in minutes.</h1>
+            <p>Arrange customer info, order summary, custom fields, validation, and live preview without touching code.</p>
+          </div>
+          <button type="button" className="proButton">Enable Fast COD Form</button>
+        </section>
+
+        <div className="proBuilderFrame">
+          <aside className="proBuilderRail">
+            <h2>Fields</h2>
+            {[
+              "Name",
+              "Phone + OTP",
+              "Address",
+              "Product variant",
+              "Quantity selector",
+              "Custom note",
+            ].map((field) => (
+              <div className="proDragItem" key={field}>+ {field}</div>
+            ))}
+            <h2>Sections</h2>
+            <div className="proDragItem">Customer info</div>
+            <div className="proDragItem">Order summary</div>
+            <div className="proDragItem">Custom fields</div>
+          </aside>
+          <section className="proBuilderMiddle">
+            <div className="proCardHeader">
+              <div>
+                <h2>Form structure</h2>
+                <p>Current active fields are shown in customer order.</p>
+              </div>
+              <span className="proPill">{activeFields.length} active fields</span>
+            </div>
+            <div className="proStructureList">
+              {previewFields.map((field, index) => (
+                <div className="proStructureItem" key={field.id}>
+                  <span>{index + 1}</span>
+                  <strong>{field.label}</strong>
+                  <small>{field.required ? "Required" : "Optional"}</small>
+                </div>
+              ))}
+            </div>
+          </section>
+          <aside className="proBuilderPreview">
+            <h2>Live preview</h2>
+            <div className="proMiniCheckout">
+              <strong>{profile.formTitle}</strong>
+              <span>{profile.formSubtitle}</span>
+              {previewFields.slice(0, 4).map((field) => (
+                <div className="proMiniInput" key={field.id}>{field.placeholder || field.label}</div>
+              ))}
+              <button type="button">{profile.submitButtonLabel}</button>
+            </div>
+          </aside>
+        </div>
+
         {draftOrderWarning ? (
           <section className="warningCard compactWarningCard">
             <div className="compactWarningCopy">
