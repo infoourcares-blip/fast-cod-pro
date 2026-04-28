@@ -30,9 +30,9 @@ export default function PrivacyRoute() {
         <section className="legalSection">
           <h2>How data is stored</h2>
           <p>
-            During development this app stores data in a local SQLite database. In production,
-            merchant data should be stored in a managed production database with restricted access,
-            backups, and internal access controls.
+            The production app stores merchant configuration, sessions, and COD submissions in a
+            managed PostgreSQL database with restricted access. Access should be limited to
+            authorized operators for support, troubleshooting, and compliance requests.
           </p>
         </section>
 

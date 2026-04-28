@@ -21,3 +21,5 @@
 - If popup does not open, inspect theme JS conflicts and selector timing.
 - If draft order is not created, verify whether the app has DraftOrder access approval.
 - If styling is broken, test both theme editor preview and actual storefront page.
+- If authentication fails after secret rotation, uninstall and reinstall the app in the affected store.
+- If privacy compliance webhook delivery fails, confirm the app version was released with the `compliance_topics` subscription and inspect Dev Dashboard webhook logs.

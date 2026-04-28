@@ -63,9 +63,9 @@ Fast Cod Pro is positioned as an advanced revenue app for COD-first stores:
 
 ## Recommended next product steps
 
-1. Get Shopify approval for protected customer data / DraftOrder access.
-2. Replace development tunnel URLs with a production domain.
-3. Move from local SQLite to a managed production database.
+1. Get Shopify approval for DraftOrder access and customer data submitted through COD forms.
+2. Keep production URLs pointed at `https://app.fastcodpro.com`.
+3. Rotate any exposed Shopify app secret before final submission.
 4. Run end-to-end QA on storefront themes and mobile devices.
 5. Finalize App Store assets using the docs in `/docs`.
 
