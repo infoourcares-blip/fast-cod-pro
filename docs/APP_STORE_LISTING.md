@@ -70,3 +70,10 @@ Fast Cod Pro uses `read_products` to show recent products in the merchant dashbo
 3. Storefront COD launcher and popup
 4. Orders Queue with search/filter/export
 5. Fraud Prevention and Automation pages
+
+## Suggested pricing copy
+
+- Forever Free for India: Start COD with 150 orders/month.
+- Premium for India: Advanced COD controls for growing merchants.
+- Enterprise: Higher order limits and priority operations support.
+- Unlimited: Built for heavy COD traffic and growth teams.

@@ -78,11 +78,13 @@ const planCatalog = [
   },
 ] as const;
 
+const billingTestMode = process.env.SHOPIFY_BILLING_TEST === "true";
+
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { billing, session } = await authenticate.admin(request);
   const billingState = await billing.check({
     plans: [LAUNCH_PLAN, SCALE_PLAN, EMPIRE_PLAN],
-    isTest: true
+    isTest: billingTestMode
   });
 
   const summary = await getFunnelSummary(session.shop);
@@ -111,7 +113,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     await billing.request({
       plan,
-      isTest: true,
+      isTest: billingTestMode,
       returnUrl: `${process.env.SHOPIFY_APP_URL}/app/billing`
     });
   }
@@ -171,7 +173,7 @@ export default function BillingRoute() {
               <p className="eyebrow">Billing</p>
               <h2 className="panelTitle">Choose your plan here</h2>
               <p className="panelText">
-                Fast Cod Pro plans below are set 20% lower than your reference pricing. Billing still uses Shopify test mode during development.
+                Fast Cod Pro plans below are set 20% lower than your reference pricing. Charges are processed securely through Shopify Billing.
               </p>
             </div>
             <div className="buttonRow">

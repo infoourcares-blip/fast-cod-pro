@@ -23,6 +23,7 @@
 - Prepare real App Store assets and demo video
 - Finalize Privacy Policy and Terms with business details
 - Release the updated Shopify app configuration after the latest `shopify.app.toml` changes
+- Fill Shopify review answers from `docs/SHOPIFY_REVIEW_SUBMISSION.md`
 
 ## Manual QA checklist
 
@@ -35,6 +36,7 @@
 - Confirm uninstall removes shop data
 - Confirm app works after reinstall with rotated production secret
 - Trigger or inspect privacy compliance webhook delivery in Shopify Dev Dashboard
+- Confirm `SHOPIFY_BILLING_TEST` is set correctly for the target release
 
 ## Current known blocker
 
