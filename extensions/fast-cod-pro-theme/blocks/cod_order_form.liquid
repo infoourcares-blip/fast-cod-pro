@@ -57,7 +57,7 @@
           <div class="fast-cod-pro-total-line"><span>Shipping</span><strong>Free</strong></div>
           <div class="fast-cod-pro-total-line fast-cod-pro-total-line--grand"><span>Total</span><strong class="fast-cod-pro-total">{{ block.settings.product.selected_or_first_available_variant.price | money | default: product.selected_or_first_available_variant.price | money }}</strong></div>
         </div>
-        <form class="fast-cod-pro-grid">
+        <div class="fast-cod-pro-grid" data-fast-cod-form>
           <h3 class="fast-cod-pro-form-title">Enter your shipping address</h3>
           <label class="fast-cod-pro-field">
             <span class="fast-cod-pro-label">Full name <em>*</em></span>
@@ -98,8 +98,8 @@
           <input type="hidden" name="variantId" value="{{ block.settings.product.selected_or_first_available_variant.id | default: product.selected_or_first_available_variant.id }}">
           <input type="hidden" name="productTitle" value="{{ block.settings.product.title | default: product.title | escape }}">
           <input type="hidden" name="price" value="{{ block.settings.product.selected_or_first_available_variant.price | money_without_currency | default: product.selected_or_first_available_variant.price | money_without_currency }}">
-          <button class="fast-cod-pro-button" type="submit">Complete Order - {{ block.settings.product.selected_or_first_available_variant.price | money | default: product.selected_or_first_available_variant.price | money }}</button>
-        </form>
+          <button class="fast-cod-pro-button" type="button">Complete Order - {{ block.settings.product.selected_or_first_available_variant.price | money | default: product.selected_or_first_available_variant.price | money }}</button>
+        </div>
         <div class="fast-cod-pro-status" hidden></div>
       </div>
     </div>
@@ -180,17 +180,38 @@
       });
     });
 
-    form.addEventListener("submit", async function (event) {
+    function collectFormData() {
+      var body = new URLSearchParams();
+      var fields = form.querySelectorAll("input, textarea, select");
+
+      for (var i = 0; i < fields.length; i += 1) {
+        var field = fields[i];
+        if (field.required && !String(field.value || "").trim()) {
+          if (typeof field.reportValidity === "function") field.reportValidity();
+          field.focus();
+          return null;
+        }
+        if (field.name) body.append(field.name, field.value);
+      }
+
+      return body;
+    }
+
+    async function submitCodOrder(event) {
       event.preventDefault();
+      event.stopPropagation();
       status.hidden = false;
       status.textContent = "Submitting COD order...";
       status.style.color = "#0f172a";
       submitButton.disabled = true;
 
-      var body = new URLSearchParams();
-      new FormData(form).forEach(function (value, key) {
-        body.append(key, value);
-      });
+      var body = collectFormData();
+      if (!body) {
+        status.textContent = "Please fill the required details.";
+        status.style.color = "#b91c1c";
+        submitButton.disabled = false;
+        return;
+      }
 
       try {
         var submitResponse = await fetch(submitUrl + "?" + body.toString(), { method: "GET", headers: { Accept: "application/json" } });
@@ -217,6 +238,18 @@
         status.style.color = "#b91c1c";
       } finally {
         submitButton.disabled = false;
+      }
+    }
+
+    form.addEventListener("click", function (event) {
+      if (event.target.closest(".fast-cod-pro-button")) {
+        submitCodOrder(event);
+      }
+    });
+
+    form.addEventListener("keydown", function (event) {
+      if (event.key === "Enter") {
+        submitCodOrder(event);
       }
     });
 

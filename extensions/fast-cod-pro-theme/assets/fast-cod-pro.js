@@ -149,15 +149,15 @@
       '<div class="fast-cod-pro-total-line"><span>Shipping</span><strong>Free</strong></div>' +
       '<div class="fast-cod-pro-total-line fast-cod-pro-total-line--grand"><span>Total</span><strong class="fast-cod-pro-total">' + escapeHtml(displayPrice) + "</strong></div>' +
       "</div>" +
-      '<form class="fast-cod-pro-grid">' +
+      '<div class="fast-cod-pro-grid" data-fast-cod-form>' +
       '<h3 class="fast-cod-pro-form-title">Enter your shipping address</h3>' +
       defaultFields().map(fieldMarkup).join("") +
       '<input type="hidden" name="quantity" value="1">' +
       '<input type="hidden" name="variantId" value="' + escapeHtml(variantId) + '">' +
       '<input type="hidden" name="productTitle" value="' + escapeHtml(productTitle) + '">' +
       '<input type="hidden" name="price" value="' + escapeHtml(price) + '">' +
-      '<button class="fast-cod-pro-button" type="submit">Complete Order - ' + escapeHtml(displayPrice) + "</button>" +
-      "</form>" +
+      '<button class="fast-cod-pro-button" type="button">Complete Order - ' + escapeHtml(displayPrice) + "</button>" +
+      "</div>" +
       '<div class="fast-cod-pro-status" hidden></div>' +
       "</div>" +
       "</div>" +
@@ -259,6 +259,23 @@
     var status = container.querySelector(".fast-cod-pro-status");
     var qtyButtons = container.querySelectorAll("[data-qty-change]");
 
+    function collectFormData() {
+      var body = new URLSearchParams();
+      var fields = form.querySelectorAll("input, textarea, select");
+
+      for (var i = 0; i < fields.length; i += 1) {
+        var field = fields[i];
+        if (field.required && !String(field.value || "").trim()) {
+          if (typeof field.reportValidity === "function") field.reportValidity();
+          field.focus();
+          return null;
+        }
+        if (field.name) body.append(field.name, field.value);
+      }
+
+      return body;
+    }
+
     function openModal() {
       modal.hidden = false;
       document.body.classList.add("fast-cod-pro-modal-open");
@@ -283,18 +300,22 @@
       });
     });
 
-    form.addEventListener("submit", async function (event) {
+    async function submitCodOrder(event) {
       event.preventDefault();
+      event.stopPropagation();
       var submitButton = container.querySelector(".fast-cod-pro-button");
       status.hidden = false;
       status.textContent = "Submitting COD order...";
       status.style.color = "#0f172a";
       submitButton.disabled = true;
 
-      var body = new URLSearchParams();
-      new FormData(form).forEach(function (value, key) {
-        body.append(key, value);
-      });
+      var body = collectFormData();
+      if (!body) {
+        status.textContent = "Please fill the required details.";
+        status.style.color = "#b91c1c";
+        submitButton.disabled = false;
+        return;
+      }
 
       try {
         var submitResponse = await fetch(submitUrl + "?" + body.toString(), {
@@ -325,6 +346,18 @@
         status.style.color = "#b91c1c";
       } finally {
         submitButton.disabled = false;
+      }
+    }
+
+    form.addEventListener("click", function (event) {
+      if (event.target.closest(".fast-cod-pro-button")) {
+        submitCodOrder(event);
+      }
+    });
+
+    form.addEventListener("keydown", function (event) {
+      if (event.key === "Enter") {
+        submitCodOrder(event);
       }
     });
 
