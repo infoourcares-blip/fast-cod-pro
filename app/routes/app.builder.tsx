@@ -12,11 +12,13 @@ type ActionData = {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   const profile = await getFunnelProfile(session.shop);
+  const shopHandle = session.shop.replace(".myshopify.com", "");
 
   return {
     profile,
     fields: profile.formFields,
-    submissions: profile.submissions
+    submissions: profile.submissions,
+    themeEditorUrl: `https://admin.shopify.com/store/${shopHandle}/themes/current/editor?context=apps`
   };
 };
 
@@ -127,7 +129,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export default function BuilderRoute() {
-  const { profile, fields, submissions: _submissions } = useLoaderData<typeof loader>();
+  const { profile, fields, submissions: _submissions, themeEditorUrl } = useLoaderData<typeof loader>();
   const actionData = useActionData<ActionData>();
   const activeFields = fields.filter((field) => field.active);
   const previewFields = activeFields.length ? activeFields : fields;
@@ -165,61 +167,12 @@ export default function BuilderRoute() {
       <div className="proShell">
         <section className="proHero proHeroCompact">
           <div>
-            <span className="proEyebrow">Drag and drop builder</span>
-            <h1>Build a high-converting COD form in minutes.</h1>
-            <p>Arrange customer info, order summary, custom fields, validation, and live preview without touching code.</p>
+            <span className="proEyebrow">Working form builder</span>
+            <h1>Edit the live COD form used on your product page.</h1>
+            <p>Change copy, colors, active fields, address collection, and preview the exact popup styling.</p>
           </div>
-          <button type="button" className="proButton">Enable Fast COD Form</button>
+          <a className="proButton" href={themeEditorUrl} target="_top" rel="noreferrer">Enable in Theme</a>
         </section>
-
-        <div className="proBuilderFrame">
-          <aside className="proBuilderRail">
-            <h2>Fields</h2>
-            {[
-              "Name",
-              "Phone + OTP",
-              "Address",
-              "Product variant",
-              "Quantity selector",
-              "Custom note",
-            ].map((field) => (
-              <div className="proDragItem" key={field}>+ {field}</div>
-            ))}
-            <h2>Sections</h2>
-            <div className="proDragItem">Customer info</div>
-            <div className="proDragItem">Order summary</div>
-            <div className="proDragItem">Custom fields</div>
-          </aside>
-          <section className="proBuilderMiddle">
-            <div className="proCardHeader">
-              <div>
-                <h2>Form structure</h2>
-                <p>Current active fields are shown in customer order.</p>
-              </div>
-              <span className="proPill">{activeFields.length} active fields</span>
-            </div>
-            <div className="proStructureList">
-              {previewFields.map((field, index) => (
-                <div className="proStructureItem" key={field.id}>
-                  <span>{index + 1}</span>
-                  <strong>{field.label}</strong>
-                  <small>{field.required ? "Required" : "Optional"}</small>
-                </div>
-              ))}
-            </div>
-          </section>
-          <aside className="proBuilderPreview">
-            <h2>Live preview</h2>
-            <div className="proMiniCheckout">
-              <strong>{profile.formTitle}</strong>
-              <span>{profile.formSubtitle}</span>
-              {previewFields.slice(0, 4).map((field) => (
-                <div className="proMiniInput" key={field.id}>{field.placeholder || field.label}</div>
-              ))}
-              <button type="button">{profile.submitButtonLabel}</button>
-            </div>
-          </aside>
-        </div>
 
         {draftOrderWarning ? (
           <section className="warningCard compactWarningCard">
@@ -235,18 +188,13 @@ export default function BuilderRoute() {
           <div className="designerToolbar">
             <div className="designerStatus">
               <span className="designerSavedDot" />
-              <span>Saved</span>
-            </div>
-            <div className="designerToolbarIcons">
-              <span className="designerTinyIcon">⚙</span>
-              <span className="designerTinyIcon">🎨</span>
-              <span className="designerTinyIcon">📱</span>
+              <span>{activeFields.length} active fields</span>
             </div>
             <div className="designerToolbarActions">
-              <span className="ghostButton">Buy Button</span>
-              <span className="ghostButton ghostButtonAccent">Form Designer</span>
-              <span className="ghostButton">Shipping Rates</span>
-              <span className="ghostButton">Preview Mode</span>
+              <a className="ghostButton ghostButtonAccent" href="#form-designer">Form Designer</a>
+              <a className="ghostButton" href="#add-field">Add Field</a>
+              <a className="ghostButton" href="#field-list">Manage Fields</a>
+              <a className="ghostButton" href={themeEditorUrl} target="_top" rel="noreferrer">Theme Editor</a>
             </div>
           </div>
 
@@ -339,26 +287,7 @@ export default function BuilderRoute() {
             </div>
 
             <div className="designerSidebar">
-              <div className="designerSideCard">
-                <div className="designerSideCardHeader">
-                  <h3>Form Versions</h3>
-                  <button type="button" className="secondaryButton">New version</button>
-                </div>
-                <div className="designerVersionPreview">
-                  <div className="designerVersionPhone" />
-                  <span>Default</span>
-                </div>
-              </div>
-
-              <div className="designerSideCard">
-                <div className="designerSideCardHeader">
-                  <h3>Buy Button</h3>
-                  <span className="designerInlineLink">Customize</span>
-                </div>
-                <div className="designerSidebarButtonPreview">{profile.submitButtonLabel}</div>
-              </div>
-
-              <Form method="post" className="designerSideCard designerSettingsForm">
+              <Form method="post" className="designerSideCard designerSettingsForm" id="form-designer">
                 <input type="hidden" name="intent" value="save-form-settings" />
                 <div className="designerSideCardHeader">
                   <h3>Form Designer</h3>
@@ -435,7 +364,7 @@ export default function BuilderRoute() {
                 </div>
               </Form>
 
-              <Form method="post" className="designerSideCard">
+              <Form method="post" className="designerSideCard" id="add-field">
                 <div className="designerSideCardHeader">
                   <h3>Add Field Element</h3>
                 </div>
@@ -455,7 +384,7 @@ export default function BuilderRoute() {
                 </div>
               </Form>
 
-              <div className="designerSideCard">
+              <div className="designerSideCard" id="field-list">
                 <div className="designerSideCardHeader">
                   <h3>Field Elements</h3>
                 </div>

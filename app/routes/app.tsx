@@ -19,8 +19,6 @@ export default function App() {
     { to: "/app/builder", label: "Form Builder", level: "secondary", icon: "form" },
     { to: "/app/settings", label: "Form Settings", level: "secondary", icon: "settings" },
     { to: "/app/offers", label: "Upsell / Downsell", level: "secondary", icon: "sales" },
-    { to: "/app/shipping", label: "Shipping Settings", level: "secondary", icon: "delivery" },
-    { to: "/app/integrations", label: "Integrations", level: "secondary", icon: "settings" },
     { to: "/app/analytics", label: "Analytics", level: "secondary", icon: "analytics" },
     { to: "/app/abandoned", label: "Abandoned Orders", level: "secondary", icon: "queue" },
     { to: "/app/fraud", label: "Fraud Protection", level: "secondary", icon: "shield" },
