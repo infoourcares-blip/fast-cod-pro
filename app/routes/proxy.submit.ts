@@ -40,12 +40,23 @@ async function handleSubmission(
       | {
           id?: string;
           invoiceUrl?: string | null;
+          order?: {
+            id?: string;
+            name?: string | null;
+          } | null;
           totalPriceSet?: {
             presentmentMoney?: {
               amount?: string;
               currencyCode?: string;
             } | null;
           } | null;
+        }
+      | null
+      | undefined;
+    let completedOrder:
+      | {
+          id?: string;
+          name?: string | null;
         }
       | null
       | undefined;
@@ -127,11 +138,63 @@ async function handleSubmission(
       draftError = error instanceof Error ? error.message : "Draft order creation failed.";
     }
 
+    if (draftOrder?.id) {
+      try {
+        const completeResponse = await admin.graphql(
+          `#graphql
+            mutation FastCodProCompleteDraftOrder($id: ID!) {
+              draftOrderComplete(id: $id, paymentPending: true) {
+                draftOrder {
+                  id
+                  order {
+                    id
+                    name
+                  }
+                }
+                userErrors {
+                  field
+                  message
+                }
+              }
+            }`,
+          {
+            variables: {
+              id: draftOrder.id
+            }
+          }
+        );
+
+        const completePayload = (await completeResponse.json()) as {
+          data?: {
+            draftOrderComplete?: {
+              draftOrder?: {
+                id?: string;
+                order?: {
+                  id?: string;
+                  name?: string | null;
+                } | null;
+              } | null;
+              userErrors?: Array<{ message?: string }>;
+            } | null;
+          };
+        };
+
+        const completeErrors = completePayload.data?.draftOrderComplete?.userErrors ?? [];
+        if (completeErrors.length) {
+          draftError = completeErrors[0]?.message || "Order creation from draft failed.";
+        } else {
+          completedOrder = completePayload.data?.draftOrderComplete?.draftOrder?.order;
+        }
+      } catch (error) {
+        draftError = error instanceof Error ? error.message : "Order creation from draft failed.";
+      }
+    }
+
     await prisma.codSubmission.create({
       data: {
         funnelProfileId: profile.id,
         shop: session.shop,
-        status: draftOrder?.id ? "received" : "pending_manual_review",
+        status: completedOrder?.id ? "confirmed" : draftOrder?.id ? "received" : "pending_manual_review",
         customerName,
         phone,
         email: email || null,
@@ -146,25 +209,33 @@ async function handleSubmission(
         currency: draftOrder?.totalPriceSet?.presentmentMoney?.currencyCode || profile.defaultCurrency,
         payloadJson: JSON.stringify({
           invoiceUrl: draftOrder?.invoiceUrl || null,
+          orderId: completedOrder?.id || null,
+          orderName: completedOrder?.name || null,
           draftError
         })
       }
     });
 
-    if (!draftOrder?.id) {
+    if (!completedOrder?.id) {
       return Response.json({
         ok: true,
-        message: "COD request received. Draft order will be reviewed manually.",
-        draftOrderCreated: false,
+        message: draftOrder?.id
+          ? "COD request received. Draft order was created, but the Shopify order needs manual review."
+          : "COD request received. Draft order will be reviewed manually.",
+        draftOrderCreated: Boolean(draftOrder?.id),
+        orderCreated: false,
         fallbackReason: draftError
       });
     }
 
     return Response.json({
       ok: true,
-      message: profile.successMessage,
+      message: `${profile.successMessage} Shopify order ${completedOrder.name || ""} has been created.`.trim(),
       invoiceUrl: draftOrder?.invoiceUrl || null,
-      draftOrderCreated: true
+      draftOrderCreated: true,
+      orderCreated: true,
+      orderId: completedOrder.id,
+      orderName: completedOrder.name || null
     });
   } catch (error) {
     return Response.json(
