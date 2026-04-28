@@ -440,8 +440,8 @@
       if (!submitButton) return;
       submitButton.setAttribute("type", "button");
       submitButton.setAttribute("onclick", "window.FastCodProSubmit&&window.FastCodProSubmit(this,event)");
-      if (submitButton.dataset.fastCodClickBound === "true") return;
-      submitButton.dataset.fastCodClickBound = "true";
+      if (submitButton.__fastCodClickBound === true) return;
+      submitButton.__fastCodClickBound = true;
       submitButton.addEventListener("click", submitCodOrder);
       submitButton.addEventListener("touchend", submitCodOrder, { passive: false });
     }
