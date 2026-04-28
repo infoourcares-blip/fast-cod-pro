@@ -8,6 +8,17 @@
       .replaceAll("'", "&#39;");
   }
 
+  function formatMoney(currency, amount) {
+    try {
+      return new Intl.NumberFormat(undefined, {
+        style: "currency",
+        currency: currency || "INR"
+      }).format(amount);
+    } catch (_error) {
+      return (currency ? currency + " " : "") + Number(amount || 0).toFixed(2);
+    }
+  }
+
   function defaultFields() {
     return [
       { key: "customerName", label: "Full name", placeholder: "Full name", type: "text", required: true },
@@ -134,8 +145,8 @@
       '<div class="fast-cod-pro-summary-row">' +
       (productImage ? '<img class="fast-cod-pro-summary-image" src="' + escapeHtml(productImage) + '" alt="' + escapeHtml(productTitle) + '">' : '<div class="fast-cod-pro-summary-image fast-cod-pro-summary-image--placeholder"></div>') +
       '<div class="fast-cod-pro-summary-meta">' +
-      '<strong>' + escapeHtml(productTitle) + "</strong>" +
-      '<span>' + escapeHtml(displayPrice) + "</span>" +
+      '<strong class="fast-cod-pro-summary-title">' + escapeHtml(productTitle) + "</strong>" +
+      '<span class="fast-cod-pro-summary-price">' + escapeHtml(displayPrice) + "</span>" +
       '<div class="fast-cod-pro-qty-control">' +
       '<button type="button" data-qty-change="-1">−</button>' +
       '<input name="quantityDisplay" value="1" readonly>' +
@@ -179,6 +190,58 @@
     subtotal.textContent = amount;
     total.textContent = amount;
     submitButton.textContent = "Place Fast COD Pro Order - " + amount;
+  }
+
+  function applyProductData(container, product) {
+    if (!product) return null;
+    var variant = (product.variants || []).find(function (item) {
+      return item.available !== false;
+    }) || (product.variants || [])[0];
+    if (!variant) return null;
+
+    var image = product.featured_image || "";
+    var title = product.title || container.dataset.productTitle || "Selected product";
+    var amount = Number(variant.price || 0) / 100;
+    var currency = container.dataset.currency || "INR";
+    var displayPrice = formatMoney(currency, amount);
+
+    container.dataset.productTitle = title;
+    container.dataset.variantId = String(variant.id || "");
+    container.dataset.price = String(amount);
+    container.dataset.priceCents = String(variant.price || 0);
+    container.dataset.priceDisplay = displayPrice;
+
+    var titleNode = container.querySelector(".fast-cod-pro-summary-title");
+    var priceNode = container.querySelector(".fast-cod-pro-summary-price");
+    var imageNode = container.querySelector(".fast-cod-pro-summary-image");
+    var variantInput = container.querySelector('input[name="variantId"]');
+    var productInput = container.querySelector('input[name="productTitle"]');
+    var priceInput = container.querySelector('input[name="price"]');
+
+    if (titleNode) titleNode.textContent = title;
+    if (priceNode) priceNode.textContent = displayPrice;
+    if (imageNode && image && imageNode.tagName === "IMG") imageNode.setAttribute("src", image);
+    if (variantInput) variantInput.value = String(variant.id || "");
+    if (productInput) productInput.value = title;
+    if (priceInput) priceInput.value = String(amount);
+
+    return { amount: amount, displayPrice: displayPrice };
+  }
+
+  async function fetchProductData(container) {
+    var handle = container.dataset.productHandle;
+    if (!handle) return null;
+
+    try {
+      var response = await fetch("/products/" + encodeURIComponent(handle) + ".js", {
+        headers: { Accept: "application/json" }
+      });
+      if (!response.ok) return null;
+      return applyProductData(container, await response.json());
+    } catch (error) {
+      console.error("Fast Cod Pro product price fetch failed", error);
+      return null;
+    }
   }
 
   function resetCodForm(container) {
@@ -238,12 +301,13 @@
     var variantId = container.dataset.variantId || "";
     var currency = container.dataset.currency || "INR";
     var price = container.dataset.price || "";
+    var priceCents = Number(container.dataset.priceCents || 0);
     var priceDisplay = container.dataset.priceDisplay || "";
     var accentColor = container.dataset.accent || "#1d4ed8";
     var productTitle = container.dataset.productTitle || "Selected product";
     var productImage = container.dataset.productImage || "";
-    var displayPrice = priceDisplay || ((currency ? currency + " " : "") + price);
-    var numericPrice = parseFloat(String(price).replace(/,/g, "")) || 0;
+    var numericPrice = parseFloat(String(price).replace(/,/g, "")) || (priceCents ? priceCents / 100 : 0);
+    var displayPrice = numericPrice ? formatMoney(currency, numericPrice) : priceDisplay || formatMoney(currency, 0);
 
     hideNativePurchaseUi();
     watchNativePurchaseUi();
@@ -329,6 +393,10 @@
       }
 
       try {
+        if (!submitUrl) {
+          throw new Error("Missing Fast COD Pro submit URL.");
+        }
+
         var submitResponse = await fetch(submitUrl + "?" + body.toString(), {
           method: "GET",
           headers: { Accept: "application/json" }
@@ -352,15 +420,15 @@
         status.style.color = "#047857";
         resetCodForm(container);
         syncQuantity(container, currency, numericPrice, displayPrice);
-      } catch (_error) {
-        status.textContent = "Could not submit COD order. Please try again.";
+      } catch (error) {
+        status.textContent = error && error.message ? error.message : "Could not submit COD order. Please try again.";
         status.style.color = "#b91c1c";
       } finally {
         submitButton.disabled = false;
       }
     }
 
-    form.addEventListener("click", function (event) {
+    container.addEventListener("click", function (event) {
       if (event.target.closest(".fast-cod-pro-button")) {
         submitCodOrder(event);
       }
@@ -373,7 +441,16 @@
     });
 
     syncQuantity(container, currency, numericPrice, displayPrice);
-    enhanceFields(container, endpoint, accentColor);
+    fetchProductData(container).then(function (productState) {
+      if (productState) {
+        numericPrice = productState.amount;
+        displayPrice = productState.displayPrice;
+        syncQuantity(container, currency, numericPrice, displayPrice);
+      }
+    });
+    enhanceFields(container, endpoint, accentColor).then(function () {
+      syncQuantity(container, currency, numericPrice, displayPrice);
+    });
   }
 
   document.querySelectorAll("[data-fast-cod-pro-root]").forEach(function (node) {

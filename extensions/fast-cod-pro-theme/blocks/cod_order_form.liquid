@@ -1,15 +1,27 @@
 {{ 'fast-cod-pro.css' | asset_url | stylesheet_tag }}
+{% liquid
+  assign fast_cod_product = block.settings.product
+  if fast_cod_product == blank
+    assign fast_cod_product = product
+  endif
+  assign fast_cod_variant = fast_cod_product.selected_or_first_available_variant
+  assign fast_cod_image = fast_cod_product.featured_image
+  assign fast_cod_price_cents = fast_cod_variant.price | default: 0
+  assign fast_cod_price_amount = fast_cod_price_cents | divided_by: 100.0
+%}
 <div
   data-fast-cod-pro-root
   data-accent="{{ block.settings.accent_color }}"
-  data-product-title="{{ block.settings.product.title | default: product.title | escape }}"
-  data-product-image="{{ block.settings.product.featured_image | image_url: width: 240 | default: product.featured_image | image_url: width: 240 }}"
-  data-variant-id="{{ block.settings.product.selected_or_first_available_variant.id | default: product.selected_or_first_available_variant.id }}"
+  data-product-title="{{ fast_cod_product.title | escape }}"
+  data-product-handle="{{ fast_cod_product.handle }}"
+  data-product-image="{{ fast_cod_image | image_url: width: 240 }}"
+  data-variant-id="{{ fast_cod_variant.id }}"
   data-currency="{{ cart.currency.iso_code | default: shop.currency }}"
-  data-price="{{ block.settings.product.selected_or_first_available_variant.price | money_without_currency | default: product.selected_or_first_available_variant.price | money_without_currency }}"
-  data-price-display="{{ block.settings.product.selected_or_first_available_variant.price | money | default: product.selected_or_first_available_variant.price | money }}"
-  data-stock="{{ block.settings.product.selected_or_first_available_variant.inventory_quantity | default: product.selected_or_first_available_variant.inventory_quantity | default: 8 }}"
-  data-config-url="/apps/fast-cod-pro/form-config?product_title={{ block.settings.product.title | default: product.title | url_encode }}&variant_id={{ block.settings.product.selected_or_first_available_variant.id | default: product.selected_or_first_available_variant.id }}&price={{ block.settings.product.selected_or_first_available_variant.price | money_without_currency | default: product.selected_or_first_available_variant.price | money_without_currency }}"
+  data-price="{{ fast_cod_price_amount }}"
+  data-price-cents="{{ fast_cod_price_cents }}"
+  data-price-display="{{ fast_cod_variant.price | money }}"
+  data-stock="{{ fast_cod_variant.inventory_quantity | default: 8 }}"
+  data-config-url="/apps/fast-cod-pro/form-config?product_title={{ fast_cod_product.title | url_encode }}&variant_id={{ fast_cod_variant.id }}&price={{ fast_cod_price_amount }}"
   data-submit-url="/apps/fast-cod-pro/submit"
 >
   <div class="fast-cod-pro-launcher-card fast-cod-pro-launcher-card--button-only">
@@ -34,16 +46,15 @@
       <div class="fast-cod-pro-sheet-body">
         <div class="fast-cod-pro-summary-card">
           <div class="fast-cod-pro-summary-row">
-            {% assign fast_cod_image = block.settings.product.featured_image | default: product.featured_image %}
             {% if fast_cod_image %}
-              {{ fast_cod_image | image_url: width: 240 | image_tag: class: 'fast-cod-pro-summary-image', alt: block.settings.product.title | default: product.title }}
+              {{ fast_cod_image | image_url: width: 240 | image_tag: class: 'fast-cod-pro-summary-image', alt: fast_cod_product.title }}
             {% else %}
               <div class="fast-cod-pro-summary-image fast-cod-pro-summary-image--placeholder"></div>
             {% endif %}
             <div class="fast-cod-pro-summary-meta">
               <span class="fast-cod-pro-summary-eyebrow">Order summary</span>
-              <strong>{{ block.settings.product.title | default: product.title }}</strong>
-              <span>{{ block.settings.product.selected_or_first_available_variant.price | money | default: product.selected_or_first_available_variant.price | money }}</span>
+              <strong class="fast-cod-pro-summary-title">{{ fast_cod_product.title }}</strong>
+              <span class="fast-cod-pro-summary-price">{{ fast_cod_variant.price | money }}</span>
               <div class="fast-cod-pro-qty-control">
                 <button type="button" data-qty-change="-1">−</button>
                 <input name="quantityDisplay" value="1" readonly>
@@ -53,9 +64,9 @@
           </div>
         </div>
         <div class="fast-cod-pro-total-card">
-          <div class="fast-cod-pro-total-line"><span>Subtotal</span><strong class="fast-cod-pro-subtotal">{{ block.settings.product.selected_or_first_available_variant.price | money | default: product.selected_or_first_available_variant.price | money }}</strong></div>
+          <div class="fast-cod-pro-total-line"><span>Subtotal</span><strong class="fast-cod-pro-subtotal">{{ fast_cod_variant.price | money }}</strong></div>
           <div class="fast-cod-pro-total-line"><span>Shipping</span><strong>Free</strong></div>
-          <div class="fast-cod-pro-total-line fast-cod-pro-total-line--grand"><span>Total</span><strong class="fast-cod-pro-total">{{ block.settings.product.selected_or_first_available_variant.price | money | default: product.selected_or_first_available_variant.price | money }}</strong></div>
+          <div class="fast-cod-pro-total-line fast-cod-pro-total-line--grand"><span>Total</span><strong class="fast-cod-pro-total">{{ fast_cod_variant.price | money }}</strong></div>
         </div>
         <div class="fast-cod-pro-grid" data-fast-cod-form>
           <h3 class="fast-cod-pro-form-title">Fast COD Pro order form</h3>
@@ -95,10 +106,10 @@
             </span>
           </label>
           <input type="hidden" name="quantity" value="1">
-          <input type="hidden" name="variantId" value="{{ block.settings.product.selected_or_first_available_variant.id | default: product.selected_or_first_available_variant.id }}">
-          <input type="hidden" name="productTitle" value="{{ block.settings.product.title | default: product.title | escape }}">
-          <input type="hidden" name="price" value="{{ block.settings.product.selected_or_first_available_variant.price | money_without_currency | default: product.selected_or_first_available_variant.price | money_without_currency }}">
-          <button class="fast-cod-pro-button" type="button">Place Fast COD Pro Order - {{ block.settings.product.selected_or_first_available_variant.price | money | default: product.selected_or_first_available_variant.price | money }}</button>
+          <input type="hidden" name="variantId" value="{{ fast_cod_variant.id }}">
+          <input type="hidden" name="productTitle" value="{{ fast_cod_product.title | escape }}">
+          <input type="hidden" name="price" value="{{ fast_cod_price_amount }}">
+          <button class="fast-cod-pro-button" type="button">Place Fast COD Pro Order - {{ fast_cod_variant.price | money }}</button>
         </div>
         <div class="fast-cod-pro-status" hidden></div>
       </div>
