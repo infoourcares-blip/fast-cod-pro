@@ -1,7 +1,7 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import prisma from "../db.server";
 import { getFunnelProfile } from "../lib/funnel.server";
-import { authenticate } from "../shopify.server";
+import { authenticate, unauthenticated } from "../shopify.server";
 
 type GraphqlUserError = {
   field?: string[] | string | null;
@@ -32,17 +32,60 @@ function formatGraphqlErrors(
   return [...formattedUserErrors, ...formattedTopLevelErrors].join(" | ");
 }
 
+function normalizeShopDomain(value: FormDataEntryValue | string | null) {
+  const shop = String(value || "").trim().toLowerCase();
+  return /^[a-z0-9][a-z0-9-]*\.myshopify\.com$/.test(shop) ? shop : "";
+}
+
+function isTrustedStorefrontRequest(request: Request, shop: string) {
+  const origin = request.headers.get("origin") || "";
+  const referer = request.headers.get("referer") || "";
+  const forwardedHost = request.headers.get("x-forwarded-host") || "";
+  const host = request.headers.get("host") || "";
+  const trustedHosts = [origin, referer, forwardedHost, host]
+    .filter(Boolean)
+    .map((value) => value.toLowerCase());
+
+  return trustedHosts.some((value) => value.includes(shop));
+}
+
+async function getSubmissionContext(
+  request: Request,
+  getValue: (key: string) => FormDataEntryValue | string | null
+) {
+  try {
+    const context = await authenticate.public.appProxy(request);
+    if (context.session?.shop && context.admin) {
+      return context;
+    }
+  } catch (_error) {
+    // Native storefront form submits may arrive without app proxy signature.
+  }
+
+  const fallbackShop = normalizeShopDomain(getValue("shop"));
+  if (!fallbackShop || !isTrustedStorefrontRequest(request, fallbackShop)) {
+    return null;
+  }
+
+  try {
+    return await unauthenticated.admin(fallbackShop);
+  } catch (_error) {
+    return null;
+  }
+}
+
 async function handleSubmission(
   request: Request,
   getValue: (key: string) => FormDataEntryValue | string | null
 ) {
   try {
-    const { session, admin } = await authenticate.public.appProxy(request);
+    const context = await getSubmissionContext(request, getValue);
 
-    if (!session?.shop || !admin) {
+    if (!context?.session?.shop || !context.admin) {
       return Response.json({ error: "Unauthorized proxy request." }, { status: 401 });
     }
 
+    const { session, admin } = context;
     const profile = await getFunnelProfile(session.shop);
 
     const customerName = String(getValue("customerName") || "").trim();

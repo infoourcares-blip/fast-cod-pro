@@ -167,6 +167,7 @@
       '<input type="hidden" name="variantId" value="' + escapeHtml(variantId) + '">' +
       '<input type="hidden" name="productTitle" value="' + escapeHtml(productTitle) + '">' +
       '<input type="hidden" name="price" value="' + escapeHtml(price) + '">' +
+      '<input type="hidden" name="shop" value="' + escapeHtml(document.location.hostname) + '">' +
       '<button class="fast-cod-pro-button" type="submit" onclick="window.FastCodProSubmit&&window.FastCodProSubmit(this,event)">Place Fast COD Pro Order - ' + escapeHtml(displayPrice) + "</button>" +
       "</form>" +
       '<div class="fast-cod-pro-status" hidden></div>' +

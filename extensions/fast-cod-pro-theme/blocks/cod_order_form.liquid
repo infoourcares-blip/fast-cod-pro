@@ -21,6 +21,7 @@
   data-price-cents="{{ fast_cod_price_cents }}"
   data-price-display="{{ fast_cod_variant.price | money }}"
   data-stock="{{ fast_cod_variant.inventory_quantity | default: 8 }}"
+  data-shop="{{ shop.permanent_domain }}"
   data-config-url="/apps/fast-cod-pro/form-config?product_title={{ fast_cod_product.title | url_encode }}&variant_id={{ fast_cod_variant.id }}&price={{ fast_cod_price_amount }}"
   data-submit-url="/apps/fast-cod-pro/submit"
 >
@@ -109,6 +110,7 @@
           <input type="hidden" name="variantId" value="{{ fast_cod_variant.id }}">
           <input type="hidden" name="productTitle" value="{{ fast_cod_product.title | escape }}">
           <input type="hidden" name="price" value="{{ fast_cod_price_amount }}">
+          <input type="hidden" name="shop" value="{{ shop.permanent_domain }}">
           <button class="fast-cod-pro-button" type="submit" onclick="window.FastCodProSubmit&&window.FastCodProSubmit(this,event)">Place Fast COD Pro Order - {{ fast_cod_variant.price | money }}</button>
         </form>
         <div class="fast-cod-pro-status" hidden></div>
