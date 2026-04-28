@@ -68,7 +68,7 @@
           <div class="fast-cod-pro-total-line"><span>Shipping</span><strong>Free</strong></div>
           <div class="fast-cod-pro-total-line fast-cod-pro-total-line--grand"><span>Total</span><strong class="fast-cod-pro-total">{{ fast_cod_variant.price | money }}</strong></div>
         </div>
-        <div class="fast-cod-pro-grid" data-fast-cod-form>
+        <form class="fast-cod-pro-grid" data-fast-cod-form method="get" action="/apps/fast-cod-pro/submit">
           <h3 class="fast-cod-pro-form-title">Fast COD Pro order form</h3>
           <label class="fast-cod-pro-field">
             <span class="fast-cod-pro-label">Full name <em>*</em></span>
@@ -109,8 +109,8 @@
           <input type="hidden" name="variantId" value="{{ fast_cod_variant.id }}">
           <input type="hidden" name="productTitle" value="{{ fast_cod_product.title | escape }}">
           <input type="hidden" name="price" value="{{ fast_cod_price_amount }}">
-          <button class="fast-cod-pro-button" type="button" onclick="window.FastCodProSubmit&&window.FastCodProSubmit(this,event)">Place Fast COD Pro Order - {{ fast_cod_variant.price | money }}</button>
-        </div>
+          <button class="fast-cod-pro-button" type="submit" onclick="window.FastCodProSubmit&&window.FastCodProSubmit(this,event)">Place Fast COD Pro Order - {{ fast_cod_variant.price | money }}</button>
+        </form>
         <div class="fast-cod-pro-status" hidden></div>
       </div>
     </div>

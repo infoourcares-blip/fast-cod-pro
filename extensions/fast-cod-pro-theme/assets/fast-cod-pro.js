@@ -99,8 +99,8 @@
       "body.fast-cod-pro-enabled .shopify-payment-button,",
       "body.fast-cod-pro-enabled .shopify-payment-button__button,",
       "body.fast-cod-pro-enabled .product-form__buttons > *:not([data-fast-cod-pro-root]),",
-      "body.fast-cod-pro-enabled product-form button[type='submit'],",
-      "body.fast-cod-pro-enabled form[action*='/cart/add'] button[type='submit'],",
+      "body.fast-cod-pro-enabled product-form button[type='submit']:not(.fast-cod-pro-button),",
+      "body.fast-cod-pro-enabled form[action*='/cart/add'] button[type='submit']:not(.fast-cod-pro-button),",
       "body.fast-cod-pro-enabled .product-form__submit { display:none !important; }"
     ].join("");
     document.head.appendChild(style);
@@ -114,8 +114,8 @@
       ".shopify-payment-button",
       ".shopify-payment-button__button",
       ".product-form__submit",
-      "product-form button[type='submit']",
-      "form[action*='/cart/add'] button[type='submit']"
+      "product-form button[type='submit']:not(.fast-cod-pro-button)",
+      "form[action*='/cart/add'] button[type='submit']:not(.fast-cod-pro-button)"
     ];
 
     document.querySelectorAll(selectors.join(",")).forEach(function (node) {
@@ -131,7 +131,7 @@
     window.__fastCodObserver.observe(document.body, { childList: true, subtree: true });
   }
 
-  function buildModalHtml(productTitle, productImage, displayPrice, variantId, price) {
+  function buildModalHtml(productTitle, productImage, displayPrice, variantId, price, submitUrl) {
     return (
       '<div class="fast-cod-pro-modal" hidden>' +
       '<div class="fast-cod-pro-backdrop" data-fast-cod-close onclick="var modal=this.closest(\'.fast-cod-pro-modal\');if(modal){modal.hidden=true;document.body.classList.remove(\'fast-cod-pro-modal-open\');}"></div>' +
@@ -160,15 +160,15 @@
       '<div class="fast-cod-pro-total-line"><span>Shipping</span><strong>Free</strong></div>' +
       '<div class="fast-cod-pro-total-line fast-cod-pro-total-line--grand"><span>Total</span><strong class="fast-cod-pro-total">' + escapeHtml(displayPrice) + "</strong></div>' +
       "</div>" +
-      '<div class="fast-cod-pro-grid" data-fast-cod-form>' +
+      '<form class="fast-cod-pro-grid" data-fast-cod-form method="get" action="' + escapeHtml(submitUrl || "/apps/fast-cod-pro/submit") + '">' +
       '<h3 class="fast-cod-pro-form-title">Fast COD Pro order form</h3>' +
       defaultFields().map(fieldMarkup).join("") +
       '<input type="hidden" name="quantity" value="1">' +
       '<input type="hidden" name="variantId" value="' + escapeHtml(variantId) + '">' +
       '<input type="hidden" name="productTitle" value="' + escapeHtml(productTitle) + '">' +
       '<input type="hidden" name="price" value="' + escapeHtml(price) + '">' +
-      '<button class="fast-cod-pro-button" type="button" onclick="window.FastCodProSubmit&&window.FastCodProSubmit(this,event)">Place Fast COD Pro Order - ' + escapeHtml(displayPrice) + "</button>" +
-      "</div>" +
+      '<button class="fast-cod-pro-button" type="submit" onclick="window.FastCodProSubmit&&window.FastCodProSubmit(this,event)">Place Fast COD Pro Order - ' + escapeHtml(displayPrice) + "</button>" +
+      "</form>" +
       '<div class="fast-cod-pro-status" hidden></div>' +
       "</div>" +
       "</div>" +
@@ -325,7 +325,7 @@
     launcher.setAttribute("onclick", "var root=this.closest('[data-fast-cod-pro-root]');var modal=root&&root.querySelector('.fast-cod-pro-modal');if(modal){modal.hidden=false;document.body.classList.add('fast-cod-pro-modal-open');}return false;");
 
     if (!container.querySelector(".fast-cod-pro-modal")) {
-      container.insertAdjacentHTML("beforeend", buildModalHtml(productTitle, productImage, displayPrice, variantId, price));
+      container.insertAdjacentHTML("beforeend", buildModalHtml(productTitle, productImage, displayPrice, variantId, price, submitUrl));
     }
 
     var modal = container.querySelector(".fast-cod-pro-modal");
@@ -438,7 +438,7 @@
     function bindSubmitButton() {
       var submitButton = container.querySelector(".fast-cod-pro-button");
       if (!submitButton) return;
-      submitButton.setAttribute("type", "button");
+      submitButton.setAttribute("type", "submit");
       submitButton.setAttribute("onclick", "window.FastCodProSubmit&&window.FastCodProSubmit(this,event)");
       if (submitButton.__fastCodClickBound === true) return;
       submitButton.__fastCodClickBound = true;
@@ -458,6 +458,7 @@
         submitCodOrder(event);
       }
     });
+    form.addEventListener("submit", submitCodOrder);
 
     syncQuantity(container, currency, numericPrice, displayPrice);
     bindSubmitButton();
