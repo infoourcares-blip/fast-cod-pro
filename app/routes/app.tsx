@@ -16,12 +16,7 @@ export default function App() {
   const { apiKey } = useLoaderData<typeof loader>();
   const links = [
     { to: "/app", label: "Dashboard", level: "primary", icon: "dashboard" },
-    { to: "/app/builder", label: "Form Builder", level: "secondary", icon: "form" },
-    { to: "/app/settings", label: "Form Settings", level: "secondary", icon: "settings" },
-    { to: "/app/offers", label: "Upsell / Downsell", level: "secondary", icon: "sales" },
-    { to: "/app/analytics", label: "Analytics", level: "secondary", icon: "analytics" },
-    { to: "/app/abandoned", label: "Abandoned Orders", level: "secondary", icon: "queue" },
-    { to: "/app/fraud", label: "Fraud Protection", level: "secondary", icon: "shield" },
+    { to: "/app/builder", label: "COD Form", level: "secondary", icon: "form" },
     { to: "/app/submissions", label: "Orders Queue", level: "secondary", icon: "queue" },
     { to: "/app/billing", label: "Billing Plans", level: "secondary", icon: "billing" },
     { to: "/app/launch", label: "Launch Readiness", level: "secondary", icon: "launch" },
