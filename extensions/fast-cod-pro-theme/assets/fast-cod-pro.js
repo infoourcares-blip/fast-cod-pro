@@ -158,7 +158,7 @@
       '<div class="fast-cod-pro-total-card">' +
       '<div class="fast-cod-pro-total-line"><span>Subtotal</span><strong class="fast-cod-pro-subtotal">' + escapeHtml(displayPrice) + "</strong></div>" +
       '<div class="fast-cod-pro-total-line"><span>Shipping</span><strong>Free</strong></div>' +
-      '<div class="fast-cod-pro-total-line fast-cod-pro-total-line--grand"><span>Total</span><strong class="fast-cod-pro-total">' + escapeHtml(displayPrice) + "</strong></div>' +
+      '<div class="fast-cod-pro-total-line fast-cod-pro-total-line--grand"><span>Total</span><strong class="fast-cod-pro-total">' + escapeHtml(displayPrice) + "</strong></div>" +
       "</div>" +
       '<form class="fast-cod-pro-grid" data-fast-cod-form method="get" action="' + escapeHtml((submitUrl || "/apps/fast-cod-pro/submit") + "?shop=" + encodeURIComponent(shopDomain || document.location.hostname)) + '">' +
       '<h3 class="fast-cod-pro-form-title">Fast COD Pro order form</h3>' +
@@ -272,6 +272,7 @@
       var existingVariant = form.querySelector('input[name="variantId"]');
       var existingProduct = form.querySelector('input[name="productTitle"]');
       var existingPrice = form.querySelector('input[name="price"]');
+      var existingShop = form.querySelector('input[name="shop"]');
       var existingButton = form.querySelector(".fast-cod-pro-button");
 
       form.innerHTML =
@@ -281,6 +282,7 @@
         existingVariant.outerHTML +
         existingProduct.outerHTML +
         existingPrice.outerHTML +
+        (existingShop ? existingShop.outerHTML : "") +
         existingButton.outerHTML;
 
       if (title) title.textContent = formConfig.title || "Fast COD Pro order form";
@@ -317,7 +319,7 @@
 
     var launcher = container.querySelector(".fast-cod-pro-launcher");
     if (!launcher) {
-      container.innerHTML = '<div class="fast-cod-pro-launcher-card fast-cod-pro-launcher-card--button-only"><button class="fast-cod-pro-launcher" type="button" onclick="var root=this.closest(\\'[data-fast-cod-pro-root]\\');var modal=root&&root.querySelector(\\'.fast-cod-pro-modal\\');if(modal){modal.hidden=false;document.body.classList.add(\\'fast-cod-pro-modal-open\\');}return false;"><span class="fast-cod-pro-launcher-icon">🛒</span><span class="fast-cod-pro-launcher-label">Order with Fast COD Pro</span></button></div>';
+      container.innerHTML = '<div class="fast-cod-pro-launcher-card fast-cod-pro-launcher-card--button-only"><button class="fast-cod-pro-launcher" type="button"><span class="fast-cod-pro-launcher-icon">🛒</span><span class="fast-cod-pro-launcher-label">Order with Fast COD Pro</span></button></div>';
       launcher = container.querySelector(".fast-cod-pro-launcher");
     } else if (!launcher.querySelector(".fast-cod-pro-launcher-label")) {
       var label = launcher.textContent || "Order with Fast COD Pro";
@@ -395,6 +397,7 @@
       if (!body) {
         status.textContent = "Please fill the required details.";
         status.style.color = "#b91c1c";
+        submitInProgress = false;
         submitButton.disabled = false;
         return;
       }
@@ -489,9 +492,26 @@
     return false;
   };
 
-  document.querySelectorAll("[data-fast-cod-pro-root]").forEach(function (node) {
-    init(node).catch(function (error) {
-      console.error("Fast Cod Pro form failed to initialize", error);
+  document.addEventListener("click", function (event) {
+    var button = event.target && event.target.closest ? event.target.closest(".fast-cod-pro-button") : null;
+    if (!button) return;
+    window.FastCodProSubmit(button, event);
+  }, true);
+
+  document.addEventListener("touchend", function (event) {
+    var button = event.target && event.target.closest ? event.target.closest(".fast-cod-pro-button") : null;
+    if (!button) return;
+    window.FastCodProSubmit(button, event);
+  }, { capture: true, passive: false });
+
+  function initAll() {
+    document.querySelectorAll("[data-fast-cod-pro-root]").forEach(function (node) {
+      init(node).catch(function (error) {
+        console.error("Fast Cod Pro form failed to initialize", error);
+      });
     });
-  });
+  }
+
+  initAll();
+  document.addEventListener("shopify:section:load", initAll);
 })();
