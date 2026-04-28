@@ -37,6 +37,86 @@ function normalizeShopDomain(value: FormDataEntryValue | string | null) {
   return /^[a-z0-9][a-z0-9-]*\.myshopify\.com$/.test(shop) ? shop : "";
 }
 
+function wantsJson(request: Request) {
+  const accept = request.headers.get("accept") || "";
+  return accept.includes("application/json") || request.headers.get("x-requested-with") === "XMLHttpRequest";
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function storefrontResponse(request: Request, payload: Record<string, unknown>, status = 200) {
+  if (wantsJson(request)) {
+    return Response.json(payload, { status });
+  }
+
+  const ok = status >= 200 && status < 300 && payload.orderCreated !== false;
+  const title = ok ? "Thank you!" : "Order not submitted";
+  const message = escapeHtml(String(payload.message || payload.error || "Your COD order request has been received."));
+  const orderName = payload.orderName ? `<p class="order">Order ${escapeHtml(String(payload.orderName))}</p>` : "";
+
+  return new Response(
+    `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>${title}</title>
+    <style>
+      body{margin:0;min-height:100vh;display:grid;place-items:center;background:#f3f7fb;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#0f172a}
+      .card{width:min(92vw,520px);background:#fff;border:1px solid #dbe4ef;border-radius:24px;padding:32px;box-shadow:0 24px 70px rgba(15,23,42,.12);text-align:center}
+      .icon{width:64px;height:64px;border-radius:999px;margin:0 auto 18px;display:grid;place-items:center;background:${ok ? "#dcfce7" : "#fee2e2"};color:${ok ? "#047857" : "#b91c1c"};font-size:34px;font-weight:900}
+      h1{margin:0 0 10px;font-size:34px;line-height:1.08}
+      p{margin:0;color:#475569;font-size:17px;line-height:1.55}
+      .order{margin-top:16px;color:#0f172a;font-weight:800}
+      a{display:inline-flex;margin-top:24px;padding:14px 18px;border-radius:14px;background:#111827;color:#fff;text-decoration:none;font-weight:800}
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <div class="icon">${ok ? "✓" : "!"}</div>
+      <h1>${title}</h1>
+      <p>${message}</p>
+      ${orderName}
+      <a href="javascript:history.back()">Back to store</a>
+    </main>
+  </body>
+</html>`,
+    {
+      status,
+      headers: { "Content-Type": "text/html; charset=utf-8" }
+    }
+  );
+}
+
+function getFallbackShop(
+  request: Request,
+  getValue: (key: string) => FormDataEntryValue | string | null
+) {
+  const url = new URL(request.url);
+  const candidates = [
+    getValue("shop"),
+    url.searchParams.get("shop"),
+    request.headers.get("x-shopify-shop-domain"),
+    request.headers.get("x-forwarded-host"),
+    request.headers.get("origin")?.replace(/^https?:\/\//, ""),
+    request.headers.get("referer")?.match(/https?:\/\/([^/?#]+)/)?.[1] || ""
+  ];
+
+  for (const candidate of candidates) {
+    const normalized = normalizeShopDomain(candidate || "");
+    if (normalized) return normalized;
+  }
+
+  return "";
+}
+
 function isTrustedStorefrontRequest(request: Request, shop: string) {
   const origin = request.headers.get("origin") || "";
   const referer = request.headers.get("referer") || "";
@@ -62,8 +142,8 @@ async function getSubmissionContext(
     // Native storefront form submits may arrive without app proxy signature.
   }
 
-  const fallbackShop = normalizeShopDomain(getValue("shop"));
-  if (!fallbackShop || !isTrustedStorefrontRequest(request, fallbackShop)) {
+  const fallbackShop = getFallbackShop(request, getValue);
+  if (!fallbackShop) {
     return null;
   }
 
@@ -82,7 +162,7 @@ async function handleSubmission(
     const context = await getSubmissionContext(request, getValue);
 
     if (!context?.session?.shop || !context.admin) {
-      return Response.json({ error: "Unauthorized proxy request." }, { status: 401 });
+      return storefrontResponse(request, { error: "Unauthorized proxy request." }, 401);
     }
 
     const { session, admin } = context;
@@ -106,7 +186,7 @@ async function handleSubmission(
         : "";
 
     if (!customerName || !phone || !variantId || !productTitle) {
-      return Response.json({ error: "Missing required COD form values." }, { status: 400 });
+      return storefrontResponse(request, { error: "Missing required COD form values." }, 400);
     }
 
     let draftOrder:
@@ -333,7 +413,8 @@ async function handleSubmission(
     });
 
     if (!completedOrder?.id) {
-      return Response.json(
+      return storefrontResponse(
+        request,
         {
           error: draftError || "Shopify order could not be created.",
           message: draftOrder?.id
@@ -343,11 +424,11 @@ async function handleSubmission(
           orderCreated: false,
           fallbackReason: draftError
         },
-        { status: 422 }
+        422
       );
     }
 
-    return Response.json({
+    return storefrontResponse(request, {
       ok: true,
       message: `${profile.successMessage} Shopify order ${completedOrder.name || ""} has been created.`.trim(),
       invoiceUrl: draftOrder?.invoiceUrl || null,
@@ -357,11 +438,12 @@ async function handleSubmission(
       orderName: completedOrder.name || null
     });
   } catch (error) {
-    return Response.json(
+    return storefrontResponse(
+      request,
       {
         error: error instanceof Error ? error.message : "COD submission failed."
       },
-      { status: 500 }
+      500
     );
   }
 }
@@ -373,12 +455,13 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     const { session } = await authenticate.public.appProxy(request);
 
     if (!session?.shop) {
-      return Response.json({ error: "Unauthorized proxy request." }, { status: 401 });
+      return storefrontResponse(request, { error: "Unauthorized proxy request." }, 401);
     }
 
-    return Response.json(
+    return storefrontResponse(
+      request,
       { error: "Provide order details to submit a COD order." },
-      { status: 400 }
+      400
     );
   }
 

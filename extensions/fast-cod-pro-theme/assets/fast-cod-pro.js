@@ -131,7 +131,7 @@
     window.__fastCodObserver.observe(document.body, { childList: true, subtree: true });
   }
 
-  function buildModalHtml(productTitle, productImage, displayPrice, variantId, price, submitUrl) {
+  function buildModalHtml(productTitle, productImage, displayPrice, variantId, price, submitUrl, shopDomain) {
     return (
       '<div class="fast-cod-pro-modal" hidden>' +
       '<div class="fast-cod-pro-backdrop" data-fast-cod-close onclick="var modal=this.closest(\'.fast-cod-pro-modal\');if(modal){modal.hidden=true;document.body.classList.remove(\'fast-cod-pro-modal-open\');}"></div>' +
@@ -160,15 +160,15 @@
       '<div class="fast-cod-pro-total-line"><span>Shipping</span><strong>Free</strong></div>' +
       '<div class="fast-cod-pro-total-line fast-cod-pro-total-line--grand"><span>Total</span><strong class="fast-cod-pro-total">' + escapeHtml(displayPrice) + "</strong></div>' +
       "</div>" +
-      '<form class="fast-cod-pro-grid" data-fast-cod-form method="get" action="' + escapeHtml(submitUrl || "/apps/fast-cod-pro/submit") + '">' +
+      '<form class="fast-cod-pro-grid" data-fast-cod-form method="get" action="' + escapeHtml((submitUrl || "/apps/fast-cod-pro/submit") + "?shop=" + encodeURIComponent(shopDomain || document.location.hostname)) + '">' +
       '<h3 class="fast-cod-pro-form-title">Fast COD Pro order form</h3>' +
       defaultFields().map(fieldMarkup).join("") +
       '<input type="hidden" name="quantity" value="1">' +
       '<input type="hidden" name="variantId" value="' + escapeHtml(variantId) + '">' +
       '<input type="hidden" name="productTitle" value="' + escapeHtml(productTitle) + '">' +
       '<input type="hidden" name="price" value="' + escapeHtml(price) + '">' +
-      '<input type="hidden" name="shop" value="' + escapeHtml(document.location.hostname) + '">' +
-      '<button class="fast-cod-pro-button" type="submit" onclick="window.FastCodProSubmit&&window.FastCodProSubmit(this,event)">Place Fast COD Pro Order - ' + escapeHtml(displayPrice) + "</button>" +
+      '<input type="hidden" name="shop" value="' + escapeHtml(shopDomain || document.location.hostname) + '">' +
+      '<button class="fast-cod-pro-button" type="button" onclick="return window.FastCodProSubmit?window.FastCodProSubmit(this,event):false">Place Fast COD Pro Order - ' + escapeHtml(displayPrice) + "</button>" +
       "</form>" +
       '<div class="fast-cod-pro-status" hidden></div>' +
       "</div>" +
@@ -299,6 +299,7 @@
 
     var endpoint = container.dataset.configUrl;
     var submitUrl = container.dataset.submitUrl;
+    var shopDomain = container.dataset.shop || document.location.hostname;
     var variantId = container.dataset.variantId || "";
     var currency = container.dataset.currency || "INR";
     var price = container.dataset.price || "";
@@ -326,7 +327,7 @@
     launcher.setAttribute("onclick", "var root=this.closest('[data-fast-cod-pro-root]');var modal=root&&root.querySelector('.fast-cod-pro-modal');if(modal){modal.hidden=false;document.body.classList.add('fast-cod-pro-modal-open');}return false;");
 
     if (!container.querySelector(".fast-cod-pro-modal")) {
-      container.insertAdjacentHTML("beforeend", buildModalHtml(productTitle, productImage, displayPrice, variantId, price, submitUrl));
+      container.insertAdjacentHTML("beforeend", buildModalHtml(productTitle, productImage, displayPrice, variantId, price, submitUrl, shopDomain));
     }
 
     var modal = container.querySelector(".fast-cod-pro-modal");
@@ -350,6 +351,7 @@
         if (field.name) body.append(field.name, field.value);
       }
 
+      if (!body.get("shop")) body.append("shop", shopDomain);
       return body;
     }
 
@@ -423,8 +425,11 @@
 
         status.textContent = result.message || (result.orderName ? "Order " + result.orderName + " created." : "COD order submitted.");
         status.style.color = "#047857";
-        resetCodForm(container);
-        syncQuantity(container, currency, numericPrice, displayPrice);
+        form.innerHTML =
+          '<div class="fast-cod-pro-thank-you">' +
+          '<strong>Thank you!</strong>' +
+          '<span>Your COD order has been confirmed' + (result.orderName ? " as " + escapeHtml(result.orderName) : "") + ".</span>" +
+          "</div>";
       } catch (error) {
         status.textContent = error && error.message ? error.message : "Could not submit COD order. Please try again.";
         status.style.color = "#b91c1c";
@@ -439,8 +444,8 @@
     function bindSubmitButton() {
       var submitButton = container.querySelector(".fast-cod-pro-button");
       if (!submitButton) return;
-      submitButton.setAttribute("type", "submit");
-      submitButton.setAttribute("onclick", "window.FastCodProSubmit&&window.FastCodProSubmit(this,event)");
+      submitButton.setAttribute("type", "button");
+      submitButton.setAttribute("onclick", "return window.FastCodProSubmit?window.FastCodProSubmit(this,event):false");
       if (submitButton.__fastCodClickBound === true) return;
       submitButton.__fastCodClickBound = true;
       submitButton.addEventListener("click", submitCodOrder);

@@ -554,6 +554,27 @@
   padding: 2px 2px 0;
 }
 
+.fast-cod-pro-thank-you {
+  display: grid;
+  gap: 8px;
+  padding: 22px;
+  border-radius: var(--fast-cod-radius);
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #064e3b;
+  text-align: center;
+}
+
+.fast-cod-pro-thank-you strong {
+  font-size: 28px;
+  line-height: 1.1;
+}
+
+.fast-cod-pro-thank-you span {
+  font-size: 16px;
+  font-weight: 700;
+}
+
 body.fast-cod-pro-modal-open {
   overflow: hidden;
 }
