@@ -1,4 +1,354 @@
 {{ 'fast-cod-pro.css' | asset_url | stylesheet_tag }}
+<style>
+  body.fast-cod-pro-enabled .shopify-payment-button,
+  body.fast-cod-pro-enabled .shopify-payment-button__button,
+  body.fast-cod-pro-enabled .product-form__buttons > *:not([data-fast-cod-pro-root]),
+  body.fast-cod-pro-enabled product-form button[type='submit']:not(.fast-cod-pro-button),
+  body.fast-cod-pro-enabled form[action*='/cart/add'] button[type='submit']:not(.fast-cod-pro-button),
+  body.fast-cod-pro-enabled .product-form__submit {
+    display: none !important;
+  }
+
+  [data-fast-cod-pro-root] {
+    --fast-cod-accent: #1d4ed8;
+    --fast-cod-header-bg: #111827;
+    --fast-cod-header-text: #ffffff;
+    --fast-cod-modal-bg: #f8fafc;
+    --fast-cod-surface-bg: #ffffff;
+    --fast-cod-text: #0f172a;
+    --fast-cod-muted: #475569;
+    --fast-cod-input-bg: #ffffff;
+    --fast-cod-input-text: #111827;
+    --fast-cod-input-border: #d7dee8;
+    --fast-cod-summary-bg: #eef2f7;
+    --fast-cod-primary-bg: #111111;
+    --fast-cod-primary-text: #ffffff;
+    --fast-cod-radius: 18px;
+    display: block;
+    width: 100%;
+    font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+
+  [data-fast-cod-pro-root] .fast-cod-pro-launcher-card {
+    margin: 16px 0;
+  }
+
+  [data-fast-cod-pro-root] .fast-cod-pro-launcher {
+    width: 100%;
+    min-height: 62px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    border: 0;
+    border-radius: var(--fast-cod-radius);
+    background: #111111;
+    color: #ffffff;
+    font: inherit;
+    font-size: 16px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 14px 28px rgba(15, 23, 42, 0.14);
+  }
+
+  [data-fast-cod-pro-root] .fast-cod-pro-modal[hidden] {
+    display: none !important;
+  }
+
+  [data-fast-cod-pro-root] .fast-cod-pro-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483647;
+    padding: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  [data-fast-cod-pro-root] .fast-cod-pro-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(2, 6, 23, 0.64);
+    backdrop-filter: blur(10px);
+  }
+
+  [data-fast-cod-pro-root] .fast-cod-pro-sheet {
+    position: relative;
+    width: min(100%, 760px);
+    max-height: calc(100vh - 48px);
+    display: flex;
+    flex-direction: column;
+    overflow: auto;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 28px;
+    box-shadow: 0 32px 90px rgba(2, 6, 23, 0.35);
+  }
+
+  [data-fast-cod-pro-root] .fast-cod-pro-sheet-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 4;
+    min-height: 72px;
+    padding: 14px 18px;
+    background: #111827;
+    color: #ffffff;
+  }
+
+  [data-fast-cod-pro-root] .fast-cod-pro-sheet-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #ffffff;
+    font-size: 22px;
+    font-weight: 900;
+  }
+
+  [data-fast-cod-pro-root] .fast-cod-pro-sheet-title-copy {
+    display: grid;
+    gap: 2px;
+  }
+
+  [data-fast-cod-pro-root] .fast-cod-pro-sheet-title-copy strong {
+    font-size: 20px;
+    line-height: 1.05;
+    text-transform: uppercase;
+  }
+
+  [data-fast-cod-pro-root] .fast-cod-pro-sheet-title-copy span {
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  [data-fast-cod-pro-root] .fast-cod-pro-home-icon,
+  [data-fast-cod-pro-root] .fast-cod-pro-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: 0;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+    font-size: 20px;
+  }
+
+  [data-fast-cod-pro-root] .fast-cod-pro-close {
+    cursor: pointer;
+    font-size: 28px;
+  }
+
+  [data-fast-cod-pro-root] .fast-cod-pro-sheet-body {
+    display: grid;
+    gap: 16px;
+    padding: 16px 18px 18px;
+  }
+
+  [data-fast-cod-pro-root] .fast-cod-pro-summary-card,
+  [data-fast-cod-pro-root] .fast-cod-pro-total-card {
+    padding: 16px;
+    border-radius: var(--fast-cod-radius);
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    background: #ffffff;
+    box-shadow: 0 14px 36px rgba(15, 23, 42, 0.08);
+  }
+
+  [data-fast-cod-pro-root] .fast-cod-pro-summary-row {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+  }
+
+  [data-fast-cod-pro-root] .fast-cod-pro-summary-image {
+    width: 88px;
+    height: 88px;
+    object-fit: cover;
+    border-radius: 14px;
+    background: #f3f4f6;
+  }
+
+  [data-fast-cod-pro-root] .fast-cod-pro-summary-meta {
+    display: grid;
+    gap: 6px;
+    color: #0f172a;
+  }
+
+  [data-fast-cod-pro-root] .fast-cod-pro-summary-eyebrow,
+  [data-fast-cod-pro-root] .fast-cod-pro-total-card::before {
+    color: #4f46e5;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  [data-fast-cod-pro-root] .fast-cod-pro-summary-meta strong {
+    font-size: 20px;
+    line-height: 1.1;
+  }
+
+  [data-fast-cod-pro-root] .fast-cod-pro-qty-control {
+    display: inline-grid;
+    grid-template-columns: 48px 62px 48px;
+    margin-top: 6px;
+    border: 1px solid rgba(15, 23, 42, 0.1);
+    border-radius: 12px;
+    overflow: hidden;
+    background: #ffffff;
+  }
+
+  [data-fast-cod-pro-root] .fast-cod-pro-qty-control button,
+  [data-fast-cod-pro-root] .fast-cod-pro-qty-control input {
+    min-height: 44px;
+    border: 0;
+    background: #ffffff;
+    text-align: center;
+    font: inherit;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  [data-fast-cod-pro-root] .fast-cod-pro-total-card {
+    background: linear-gradient(135deg, #eef2f7 0%, #eaf2ff 100%);
+  }
+
+  [data-fast-cod-pro-root] .fast-cod-pro-total-card::before {
+    content: "Payment overview";
+    display: block;
+    margin-bottom: 12px;
+  }
+
+  [data-fast-cod-pro-root] .fast-cod-pro-total-line {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    color: #0f172a;
+    font-size: 16px;
+    margin-bottom: 10px;
+  }
+
+  [data-fast-cod-pro-root] .fast-cod-pro-total-line--grand {
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(15, 23, 42, 0.08);
+    font-size: 20px;
+    font-weight: 900;
+  }
+
+  [data-fast-cod-pro-root] .fast-cod-pro-grid {
+    display: grid;
+    gap: 12px;
+  }
+
+  [data-fast-cod-pro-root] .fast-cod-pro-form-title {
+    margin: 2px 0 4px;
+    color: #0f172a;
+    text-align: center;
+    font-size: 24px;
+    font-weight: 900;
+    line-height: 1.05;
+  }
+
+  [data-fast-cod-pro-root] .fast-cod-pro-field {
+    display: grid;
+    gap: 7px;
+  }
+
+  [data-fast-cod-pro-root] .fast-cod-pro-label {
+    color: #0f172a;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  [data-fast-cod-pro-root] .fast-cod-pro-label em {
+    color: #dc2626;
+    font-style: normal;
+  }
+
+  [data-fast-cod-pro-root] .fast-cod-pro-input-wrap {
+    position: relative;
+    display: block;
+  }
+
+  [data-fast-cod-pro-root] .fast-cod-pro-input-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 1;
+    font-size: 16px;
+    opacity: 0.7;
+  }
+
+  [data-fast-cod-pro-root] .fast-cod-pro-grid input,
+  [data-fast-cod-pro-root] .fast-cod-pro-grid textarea,
+  [data-fast-cod-pro-root] .fast-cod-pro-grid select {
+    width: 100%;
+    min-height: 52px;
+    padding: 0 16px 0 48px;
+    border-radius: 14px;
+    border: 1px solid #d7dee8;
+    background: #ffffff;
+    color: #111827;
+    font: inherit;
+    font-size: 16px;
+    box-sizing: border-box;
+  }
+
+  [data-fast-cod-pro-root] .fast-cod-pro-button {
+    width: 100%;
+    min-height: 58px;
+    border: 0;
+    border-radius: 16px;
+    background: #111111;
+    color: #ffffff;
+    font: inherit;
+    font-size: 18px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 14px 24px rgba(15, 23, 42, 0.16);
+  }
+
+  [data-fast-cod-pro-root] .fast-cod-pro-status {
+    font-size: 14px;
+    font-weight: 800;
+  }
+
+  body.fast-cod-pro-modal-open {
+    overflow: hidden;
+  }
+
+  @media (max-width: 767px) {
+    [data-fast-cod-pro-root] .fast-cod-pro-modal {
+      padding: 10px;
+      align-items: flex-end;
+    }
+
+    [data-fast-cod-pro-root] .fast-cod-pro-sheet {
+      width: 100%;
+      max-height: calc(100vh - 12px);
+      border-radius: 24px 24px 12px 12px;
+    }
+
+    [data-fast-cod-pro-root] .fast-cod-pro-sheet-body {
+      padding: 14px;
+    }
+
+    [data-fast-cod-pro-root] .fast-cod-pro-summary-image {
+      width: 72px;
+      height: 72px;
+    }
+  }
+</style>
+<script>
+  document.body && document.body.classList.add("fast-cod-pro-enabled");
+</script>
 {% liquid
   assign fast_cod_product = block.settings.product
   if fast_cod_product == blank
