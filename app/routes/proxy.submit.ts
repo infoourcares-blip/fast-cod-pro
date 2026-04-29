@@ -20,7 +20,7 @@ type AdminClient = {
 };
 
 type SubmissionContext = {
-  session: { shop: string };
+  session: { shop: string; scope?: string | null };
   admin: AdminClient;
 };
 
@@ -161,15 +161,20 @@ function createAdminClientFromToken(shop: string, accessToken: string): AdminCli
 }
 
 async function getStoredAdminContext(shop?: string): Promise<SubmissionContext | null> {
-  const session = await prisma.session.findFirst({
+  const sessions = await prisma.session.findMany({
     where: shop ? { shop } : {},
-    orderBy: [{ isOnline: "asc" }, { expires: "desc" }]
+    orderBy: [{ isOnline: "asc" }, { expires: "desc" }],
+    take: 20
   });
+
+  const session =
+    sessions.find((item) => item.scope?.split(",").map((scope) => scope.trim()).includes("write_draft_orders")) ||
+    sessions[0];
 
   if (!session?.accessToken || !session.shop) return null;
 
   return {
-    session: { shop: session.shop },
+    session: { shop: session.shop, scope: session.scope },
     admin: createAdminClientFromToken(session.shop, session.accessToken)
   };
 }
@@ -181,6 +186,14 @@ async function getSubmissionContext(
   try {
     const context = await authenticate.public.appProxy(request);
     if (context.session?.shop && context.admin) {
+      const storedContext = await getStoredAdminContext(context.session.shop);
+      if (storedContext?.session.scope?.split(",").map((scope) => scope.trim()).includes("write_draft_orders")) {
+        return {
+          context: storedContext,
+          reason: "used_scoped_stored_session_after_app_proxy_auth"
+        };
+      }
+
       return {
         context: {
           session: { shop: context.session.shop },
@@ -201,10 +214,17 @@ async function getSubmissionContext(
     };
   }
 
+  const storedContext = await getStoredAdminContext(fallbackShop);
+  if (storedContext?.session.scope?.split(",").map((scope) => scope.trim()).includes("write_draft_orders")) {
+    return {
+      context: storedContext,
+      reason: "used_scoped_stored_session"
+    };
+  }
+
   try {
     const context = await unauthenticated.admin(fallbackShop);
     if (!context.admin) {
-      const storedContext = await getStoredAdminContext(fallbackShop);
       return {
         context: storedContext,
         reason: storedContext ? "used_stored_session_after_empty_admin" : `no_admin_for_${fallbackShop}`
@@ -217,7 +237,6 @@ async function getSubmissionContext(
       }
     };
   } catch (error) {
-    const storedContext = await getStoredAdminContext(fallbackShop);
     return {
       context: storedContext,
       reason: storedContext
@@ -366,10 +385,15 @@ async function handleSubmission(
         };
       };
 
+      if (draftOrderResponse.status === 403) {
+        draftError =
+          "Shopify permission denied for draft orders. Reinstall/update the app and approve the write_draft_orders permission.";
+      }
+
       const userErrors = draftPayload.data?.draftOrderCreate?.userErrors ?? [];
       const graphqlError = formatGraphqlErrors(userErrors, draftPayload.errors);
-      if (graphqlError) {
-        draftError = graphqlError || "Draft order creation failed.";
+      if (graphqlError || draftError) {
+        draftError = graphqlError || draftError || "Draft order creation failed.";
         console.error("Fast COD Pro draft order create failed", {
           shop: session.shop,
           draftError,
