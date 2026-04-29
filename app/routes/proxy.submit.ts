@@ -148,7 +148,11 @@ async function getSubmissionContext(
   }
 
   try {
-    return await unauthenticated.admin(fallbackShop);
+    const context = await unauthenticated.admin(fallbackShop);
+    return {
+      ...context,
+      session: context.session || { shop: fallbackShop }
+    };
   } catch (_error) {
     return null;
   }
@@ -432,6 +436,7 @@ async function handleSubmission(
       ok: true,
       message: `${profile.successMessage} Shopify order ${completedOrder.name || ""} has been created.`.trim(),
       invoiceUrl: draftOrder?.invoiceUrl || null,
+      confirmationUrl: `/apps/fast-cod-pro/thank-you?order=${encodeURIComponent(completedOrder.name || "")}&shop=${encodeURIComponent(session.shop)}`,
       draftOrderCreated: true,
       orderCreated: true,
       orderId: completedOrder.id,

@@ -428,6 +428,10 @@
 
         status.textContent = result.message || (result.orderName ? "Order " + result.orderName + " created." : "COD order submitted.");
         status.style.color = "#047857";
+        if (result.confirmationUrl) {
+          window.location.href = result.confirmationUrl;
+          return;
+        }
         form.innerHTML =
           '<div class="fast-cod-pro-thank-you">' +
           '<strong>Thank you!</strong>' +
