@@ -12,6 +12,18 @@ type GraphqlTopLevelError = {
   message?: string | null;
 };
 
+type AdminClient = {
+  graphql: (
+    query: string,
+    options?: { variables?: Record<string, unknown> }
+  ) => Promise<Response>;
+};
+
+type SubmissionContext = {
+  session: { shop: string };
+  admin: AdminClient;
+};
+
 function formatGraphqlErrors(
   userErrors: GraphqlUserError[] = [],
   topLevelErrors: GraphqlTopLevelError[] = []
@@ -129,14 +141,48 @@ function isTrustedStorefrontRequest(request: Request, shop: string) {
   return trustedHosts.some((value) => value.includes(shop));
 }
 
+function createAdminClientFromToken(shop: string, accessToken: string): AdminClient {
+  return {
+    graphql: async (query, options) =>
+      fetch(`https://${shop}/admin/api/2026-04/graphql.json`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Shopify-Access-Token": accessToken
+        },
+        body: JSON.stringify({
+          query,
+          variables: options?.variables || {}
+        })
+      })
+  };
+}
+
+async function getStoredAdminContext(shop: string): Promise<SubmissionContext | null> {
+  const session = await prisma.session.findFirst({
+    where: { shop },
+    orderBy: [{ isOnline: "asc" }, { expires: "desc" }]
+  });
+
+  if (!session?.accessToken) return null;
+
+  return {
+    session: { shop },
+    admin: createAdminClientFromToken(shop, session.accessToken)
+  };
+}
+
 async function getSubmissionContext(
   request: Request,
   getValue: (key: string) => FormDataEntryValue | string | null
-) {
+): Promise<SubmissionContext | null> {
   try {
     const context = await authenticate.public.appProxy(request);
     if (context.session?.shop && context.admin) {
-      return context;
+      return {
+        session: { shop: context.session.shop },
+        admin: context.admin
+      };
     }
   } catch (_error) {
     // Native storefront form submits may arrive without app proxy signature.
@@ -150,11 +196,11 @@ async function getSubmissionContext(
   try {
     const context = await unauthenticated.admin(fallbackShop);
     return {
-      ...context,
-      session: context.session || { shop: fallbackShop }
+      session: { shop: context.session?.shop || fallbackShop },
+      admin: context.admin
     };
   } catch (_error) {
-    return null;
+    return getStoredAdminContext(fallbackShop);
   }
 }
 
