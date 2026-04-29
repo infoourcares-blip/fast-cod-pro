@@ -379,7 +379,10 @@ async function getSubmissionContext(
     const context = await authenticate.public.appProxy(request);
     if (context.session?.shop && context.admin) {
       const storedContext = await getStoredAdminContext(context.session.shop);
-      if (hasDraftOrderScopes(storedContext?.session.scope)) {
+      if (
+        hasOrderCreateScopes(storedContext?.session.scope) ||
+        hasDraftOrderScopes(storedContext?.session.scope)
+      ) {
         return {
           context: storedContext,
           reason: "used_scoped_stored_session_after_app_proxy_auth"
@@ -407,7 +410,10 @@ async function getSubmissionContext(
   }
 
   const storedContext = await getStoredAdminContext(fallbackShop);
-  if (hasDraftOrderScopes(storedContext?.session.scope)) {
+  if (
+    hasOrderCreateScopes(storedContext?.session.scope) ||
+    hasDraftOrderScopes(storedContext?.session.scope)
+  ) {
     return {
       context: storedContext,
       reason: "used_scoped_stored_session"
@@ -476,19 +482,6 @@ async function handleSubmission(
       : rawVariantId
         ? `gid://shopify/ProductVariant/${rawVariantId}`
         : "";
-    const checkoutUrl = buildShopifyCheckoutUrl({
-      shop: session.shop,
-      rawVariantId,
-      quantity,
-      customerName,
-      phone,
-      email,
-      address1,
-      city,
-      pincode,
-      notes
-    });
-
     if (!customerName || !phone || !variantId || !productTitle) {
       return storefrontResponse(request, { error: "Missing required COD form values." }, 400);
     }
@@ -754,15 +747,14 @@ async function handleSubmission(
           error: draftError || "Shopify order could not be created.",
           message: draftOrder?.id
             ? "Draft order was created, but Shopify did not convert it to an order."
-            : checkoutUrl
-              ? "Opening secure Shopify checkout to complete this COD order."
-              : "COD request could not create a Shopify order.",
+            : hasOrderCreateScopes(session.scope)
+              ? "COD request could not create a Shopify order."
+              : "Shopify Orders permission is missing. Reinstall/update the app and approve write_orders.",
           draftOrderCreated: Boolean(draftOrder?.id),
           orderCreated: false,
-          checkoutUrl,
           fallbackReason: draftError
         },
-        checkoutUrl ? 200 : 422
+        422
       );
     }
 
