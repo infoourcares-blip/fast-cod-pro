@@ -11,6 +11,7 @@ import { EMPIRE_PLAN, LAUNCH_PLAN, SCALE_PLAN } from "./lib/billing-plans";
 
 const REQUIRED_SCOPES = [
   "read_products",
+  "write_orders",
   "write_app_proxy",
   "read_draft_orders",
   "write_draft_orders"

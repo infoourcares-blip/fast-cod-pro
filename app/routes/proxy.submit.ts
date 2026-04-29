@@ -179,6 +179,11 @@ function hasDraftOrderScopes(scope?: string | null) {
   return scopes.includes("write_draft_orders");
 }
 
+function hasOrderCreateScopes(scope?: string | null) {
+  const scopes = scopeList(scope);
+  return scopes.includes("write_orders");
+}
+
 function numericVariantId(value: string) {
   const raw = String(value || "").trim();
   const match = raw.match(/(\d+)$/);
@@ -253,6 +258,96 @@ function buildShopifyCheckoutUrl({
   return `https://${shop}/cart/${variantNumericId}:${Math.max(1, quantity)}?${params.toString()}`;
 }
 
+async function createOrderDirectly({
+  admin,
+  customerName,
+  phone,
+  email,
+  address1,
+  city,
+  pincode,
+  notes,
+  variantId,
+  quantity
+}: {
+  admin: AdminClient;
+  customerName: string;
+  phone: string;
+  email: string;
+  address1: string;
+  city: string;
+  pincode: string;
+  notes: string;
+  variantId: string;
+  quantity: number;
+}) {
+  const { firstName, lastName } = splitCustomerName(customerName);
+  const postalCode = inferPostalCode(pincode, address1);
+  const response = await admin.graphql(
+    `#graphql
+      mutation FastCodProCreateOrder($order: OrderCreateOrderInput!) {
+        orderCreate(order: $order) {
+          order {
+            id
+            name
+          }
+          userErrors {
+            field
+            message
+          }
+        }
+      }`,
+    {
+      variables: {
+        order: {
+          email: email || undefined,
+          phone,
+          note: [notes, "Payment method: Cash on Delivery", "Source: Fast COD Pro"].filter(Boolean).join("\n"),
+          tags: ["Fast COD Pro", "Cash on Delivery"],
+          lineItems: [
+            {
+              variantId,
+              quantity: Math.max(1, quantity)
+            }
+          ],
+          shippingAddress: {
+            firstName,
+            lastName,
+            address1,
+            city,
+            phone,
+            zip: postalCode,
+            countryCode: "IN"
+          },
+          customAttributes: [
+            { key: "payment_method", value: "Cash on Delivery" },
+            { key: "customer_phone", value: phone },
+            { key: "source", value: "fast_cod_pro_theme_form" }
+          ]
+        }
+      }
+    }
+  );
+
+  const payload = (await response.json()) as {
+    errors?: GraphqlTopLevelError[] | GraphqlTopLevelError | null;
+    data?: {
+      orderCreate?: {
+        order?: {
+          id?: string;
+          name?: string | null;
+        } | null;
+        userErrors?: GraphqlUserError[];
+      } | null;
+    };
+  };
+
+  return {
+    order: payload.data?.orderCreate?.order,
+    error: formatGraphqlErrors(payload.data?.orderCreate?.userErrors ?? [], payload.errors)
+  };
+}
+
 async function getStoredAdminContext(shop?: string): Promise<SubmissionContext | null> {
   const sessions = await prisma.session.findMany({
     where: shop ? { shop } : {},
@@ -261,7 +356,9 @@ async function getStoredAdminContext(shop?: string): Promise<SubmissionContext |
   });
 
   const session =
+    sessions.find((item) => !item.isOnline && hasOrderCreateScopes(item.scope)) ||
     sessions.find((item) => !item.isOnline && hasDraftOrderScopes(item.scope)) ||
+    sessions.find((item) => hasOrderCreateScopes(item.scope)) ||
     sessions.find((item) => hasDraftOrderScopes(item.scope)) ||
     sessions.find((item) => !item.isOnline) ||
     sessions[0];
@@ -595,6 +692,32 @@ async function handleSubmission(
         }
       } catch (error) {
         draftError = error instanceof Error ? error.message : "Order creation from draft failed.";
+      }
+    }
+
+    if (!completedOrder?.id && hasOrderCreateScopes(session.scope)) {
+      try {
+        const directOrderResult = await createOrderDirectly({
+          admin,
+          customerName,
+          phone,
+          email,
+          address1,
+          city,
+          pincode,
+          notes,
+          variantId,
+          quantity
+        });
+
+        if (directOrderResult.order?.id) {
+          completedOrder = directOrderResult.order;
+          draftError = null;
+        } else if (directOrderResult.error) {
+          draftError = `${draftError ? `${draftError} | ` : ""}${directOrderResult.error}`;
+        }
+      } catch (error) {
+        draftError = `${draftError ? `${draftError} | ` : ""}${error instanceof Error ? error.message : "Direct order creation failed."}`;
       }
     }
 
