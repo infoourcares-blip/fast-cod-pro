@@ -197,6 +197,13 @@ function splitCustomerName(customerName: string) {
   };
 }
 
+function inferPostalCode(pincode: string, address1: string) {
+  const direct = String(pincode || "").trim();
+  if (direct) return direct;
+
+  return String(address1 || "").match(/\b\d{6}\b/)?.[0] || "";
+}
+
 function buildShopifyCheckoutUrl({
   shop,
   rawVariantId,
@@ -224,16 +231,23 @@ function buildShopifyCheckoutUrl({
   if (!variantNumericId) return null;
 
   const { firstName, lastName } = splitCustomerName(customerName);
+  const postalCode = inferPostalCode(pincode, address1);
+  const contact = email || phone;
   const params = new URLSearchParams();
-  params.set("checkout[email]", email || "");
+  if (email) params.set("checkout[email]", email);
+  params.set("checkout[phone]", phone);
+  params.set("checkout[contact]", contact);
   params.set("checkout[shipping_address][first_name]", firstName);
   params.set("checkout[shipping_address][last_name]", lastName);
   params.set("checkout[shipping_address][phone]", phone);
   params.set("checkout[shipping_address][address1]", address1);
   params.set("checkout[shipping_address][city]", city);
-  params.set("checkout[shipping_address][zip]", pincode);
+  params.set("checkout[shipping_address][zip]", postalCode);
+  params.set("checkout[shipping_address][country]", "India");
+  params.set("checkout[shipping_address][country_code]", "IN");
   params.set("attributes[Fast COD Pro]", "true");
   params.set("attributes[Customer phone]", phone);
+  if (postalCode) params.set("attributes[Pincode]", postalCode);
   if (notes) params.set("attributes[Order notes]", notes);
 
   return `https://${shop}/cart/${variantNumericId}:${Math.max(1, quantity)}?${params.toString()}`;
