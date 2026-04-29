@@ -24,6 +24,8 @@ type SubmissionContext = {
   admin: AdminClient;
 };
 
+const SUBMIT_BUILD_ID = "cod-submit-2026-04-29-1";
+
 function formatGraphqlErrors(
   userErrors: GraphqlUserError[] = [],
   topLevelErrors: GraphqlTopLevelError[] = []
@@ -160,7 +162,7 @@ function createAdminClientFromToken(shop: string, accessToken: string): AdminCli
 
 async function getStoredAdminContext(shop?: string): Promise<SubmissionContext | null> {
   const session = await prisma.session.findFirst({
-    where: shop ? { shop } : { isOnline: false },
+    where: shop ? { shop } : {},
     orderBy: [{ isOnline: "asc" }, { expires: "desc" }]
   });
 
@@ -175,13 +177,15 @@ async function getStoredAdminContext(shop?: string): Promise<SubmissionContext |
 async function getSubmissionContext(
   request: Request,
   getValue: (key: string) => FormDataEntryValue | string | null
-): Promise<SubmissionContext | null> {
+): Promise<{ context: SubmissionContext | null; reason?: string }> {
   try {
     const context = await authenticate.public.appProxy(request);
     if (context.session?.shop && context.admin) {
       return {
-        session: { shop: context.session.shop },
-        admin: context.admin
+        context: {
+          session: { shop: context.session.shop },
+          admin: context.admin
+        }
       };
     }
   } catch (_error) {
@@ -190,20 +194,36 @@ async function getSubmissionContext(
 
   const fallbackShop = getFallbackShop(request, getValue);
   if (!fallbackShop) {
-    return getStoredAdminContext();
+    const storedContext = await getStoredAdminContext();
+    return {
+      context: storedContext,
+      reason: storedContext ? "used_first_stored_session" : "no_shop_param_no_stored_session"
+    };
   }
 
   try {
     const context = await unauthenticated.admin(fallbackShop);
     if (!context.admin) {
-      return getStoredAdminContext(fallbackShop);
+      const storedContext = await getStoredAdminContext(fallbackShop);
+      return {
+        context: storedContext,
+        reason: storedContext ? "used_stored_session_after_empty_admin" : `no_admin_for_${fallbackShop}`
+      };
     }
     return {
-      session: { shop: context.session?.shop || fallbackShop },
-      admin: context.admin
+      context: {
+        session: { shop: context.session?.shop || fallbackShop },
+        admin: context.admin
+      }
     };
-  } catch (_error) {
-    return getStoredAdminContext(fallbackShop);
+  } catch (error) {
+    const storedContext = await getStoredAdminContext(fallbackShop);
+    return {
+      context: storedContext,
+      reason: storedContext
+        ? "used_stored_session_after_unauthenticated_error"
+        : `no_stored_session_for_${fallbackShop}:${error instanceof Error ? error.message : "unknown"}`
+    };
   }
 }
 
@@ -212,10 +232,18 @@ async function handleSubmission(
   getValue: (key: string) => FormDataEntryValue | string | null
 ) {
   try {
-    const context = await getSubmissionContext(request, getValue);
+    const { context, reason } = await getSubmissionContext(request, getValue);
 
     if (!context?.session?.shop || !context.admin) {
-      return storefrontResponse(request, { error: "Unauthorized proxy request." }, 401);
+      return storefrontResponse(
+        request,
+        {
+          error: `Unauthorized proxy request. ${SUBMIT_BUILD_ID}. ${reason || "no_context"}`,
+          build: SUBMIT_BUILD_ID,
+          reason: reason || "no_context"
+        },
+        401
+      );
     }
 
     const { session, admin } = context;
