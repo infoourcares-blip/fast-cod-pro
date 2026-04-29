@@ -179,6 +179,66 @@ function hasDraftOrderScopes(scope?: string | null) {
   return scopes.includes("write_draft_orders");
 }
 
+function numericVariantId(value: string) {
+  const raw = String(value || "").trim();
+  const match = raw.match(/(\d+)$/);
+  return match ? match[1] : "";
+}
+
+function splitCustomerName(customerName: string) {
+  const parts = customerName.trim().split(/\s+/).filter(Boolean);
+  if (parts.length <= 1) {
+    return { firstName: parts[0] || customerName.trim(), lastName: "" };
+  }
+
+  return {
+    firstName: parts.slice(0, -1).join(" "),
+    lastName: parts[parts.length - 1]
+  };
+}
+
+function buildShopifyCheckoutUrl({
+  shop,
+  rawVariantId,
+  quantity,
+  customerName,
+  phone,
+  email,
+  address1,
+  city,
+  pincode,
+  notes
+}: {
+  shop: string;
+  rawVariantId: string;
+  quantity: number;
+  customerName: string;
+  phone: string;
+  email: string;
+  address1: string;
+  city: string;
+  pincode: string;
+  notes: string;
+}) {
+  const variantNumericId = numericVariantId(rawVariantId);
+  if (!variantNumericId) return null;
+
+  const { firstName, lastName } = splitCustomerName(customerName);
+  const params = new URLSearchParams();
+  params.set("checkout[email]", email || "");
+  params.set("checkout[shipping_address][first_name]", firstName);
+  params.set("checkout[shipping_address][last_name]", lastName);
+  params.set("checkout[shipping_address][phone]", phone);
+  params.set("checkout[shipping_address][address1]", address1);
+  params.set("checkout[shipping_address][city]", city);
+  params.set("checkout[shipping_address][zip]", pincode);
+  params.set("attributes[Fast COD Pro]", "true");
+  params.set("attributes[Customer phone]", phone);
+  if (notes) params.set("attributes[Order notes]", notes);
+
+  return `https://${shop}/cart/${variantNumericId}:${Math.max(1, quantity)}?${params.toString()}`;
+}
+
 async function getStoredAdminContext(shop?: string): Promise<SubmissionContext | null> {
   const sessions = await prisma.session.findMany({
     where: shop ? { shop } : {},
@@ -305,6 +365,18 @@ async function handleSubmission(
       : rawVariantId
         ? `gid://shopify/ProductVariant/${rawVariantId}`
         : "";
+    const checkoutUrl = buildShopifyCheckoutUrl({
+      shop: session.shop,
+      rawVariantId,
+      quantity,
+      customerName,
+      phone,
+      email,
+      address1,
+      city,
+      pincode,
+      notes
+    });
 
     if (!customerName || !phone || !variantId || !productTitle) {
       return storefrontResponse(request, { error: "Missing required COD form values." }, 400);
@@ -545,12 +617,15 @@ async function handleSubmission(
           error: draftError || "Shopify order could not be created.",
           message: draftOrder?.id
             ? "Draft order was created, but Shopify did not convert it to an order."
-            : "COD request could not create a Shopify order.",
+            : checkoutUrl
+              ? "Opening secure Shopify checkout to complete this COD order."
+              : "COD request could not create a Shopify order.",
           draftOrderCreated: Boolean(draftOrder?.id),
           orderCreated: false,
+          checkoutUrl,
           fallbackReason: draftError
         },
-        422
+        checkoutUrl ? 200 : 422
       );
     }
 

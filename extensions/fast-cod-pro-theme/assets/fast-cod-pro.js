@@ -420,6 +420,13 @@
           result = { error: responseText || "Unexpected response from COD endpoint." };
         }
 
+        if (result.checkoutUrl) {
+          status.textContent = result.message || "Opening secure Shopify checkout...";
+          status.style.color = "#047857";
+          window.location.href = result.checkoutUrl;
+          return;
+        }
+
         if (!submitResponse.ok || result.orderCreated === false) {
           status.textContent = result.error || result.fallbackReason || result.message || "Submission failed.";
           status.style.color = "#b91c1c";
