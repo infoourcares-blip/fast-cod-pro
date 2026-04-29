@@ -20,7 +20,7 @@ type AdminClient = {
 };
 
 type SubmissionContext = {
-  session: { shop: string; scope?: string | null };
+  session: { shop: string; scope?: string | null; isOnline?: boolean | null };
   admin: AdminClient;
 };
 
@@ -167,6 +167,18 @@ function createAdminClientFromToken(shop: string, accessToken: string): AdminCli
   };
 }
 
+function scopeList(scope?: string | null) {
+  return (scope || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function hasDraftOrderScopes(scope?: string | null) {
+  const scopes = scopeList(scope);
+  return scopes.includes("write_draft_orders");
+}
+
 async function getStoredAdminContext(shop?: string): Promise<SubmissionContext | null> {
   const sessions = await prisma.session.findMany({
     where: shop ? { shop } : {},
@@ -175,13 +187,15 @@ async function getStoredAdminContext(shop?: string): Promise<SubmissionContext |
   });
 
   const session =
-    sessions.find((item) => item.scope?.split(",").map((scope) => scope.trim()).includes("write_draft_orders")) ||
+    sessions.find((item) => !item.isOnline && hasDraftOrderScopes(item.scope)) ||
+    sessions.find((item) => hasDraftOrderScopes(item.scope)) ||
+    sessions.find((item) => !item.isOnline) ||
     sessions[0];
 
   if (!session?.accessToken || !session.shop) return null;
 
   return {
-    session: { shop: session.shop, scope: session.scope },
+    session: { shop: session.shop, scope: session.scope, isOnline: session.isOnline },
     admin: createAdminClientFromToken(session.shop, session.accessToken)
   };
 }
@@ -194,7 +208,7 @@ async function getSubmissionContext(
     const context = await authenticate.public.appProxy(request);
     if (context.session?.shop && context.admin) {
       const storedContext = await getStoredAdminContext(context.session.shop);
-      if (storedContext?.session.scope?.split(",").map((scope) => scope.trim()).includes("write_draft_orders")) {
+      if (hasDraftOrderScopes(storedContext?.session.scope)) {
         return {
           context: storedContext,
           reason: "used_scoped_stored_session_after_app_proxy_auth"
@@ -222,7 +236,7 @@ async function getSubmissionContext(
   }
 
   const storedContext = await getStoredAdminContext(fallbackShop);
-  if (storedContext?.session.scope?.split(",").map((scope) => scope.trim()).includes("write_draft_orders")) {
+  if (hasDraftOrderScopes(storedContext?.session.scope)) {
     return {
       context: storedContext,
       reason: "used_scoped_stored_session"
@@ -394,7 +408,7 @@ async function handleSubmission(
 
       if (draftOrderResponse.status === 403) {
         draftError =
-          "Shopify permission denied for draft orders. Reinstall/update the app and approve the write_draft_orders permission.";
+          `Shopify permission denied for draft orders. Reinstall/update the app and approve draft order permissions. Current stored scopes: ${scopeList(session.scope).join(",") || "none"}. Token type: ${session.isOnline ? "online" : "offline"}.`;
       }
 
       const userErrors = draftPayload.data?.draftOrderCreate?.userErrors ?? [];
