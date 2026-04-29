@@ -158,17 +158,17 @@ function createAdminClientFromToken(shop: string, accessToken: string): AdminCli
   };
 }
 
-async function getStoredAdminContext(shop: string): Promise<SubmissionContext | null> {
+async function getStoredAdminContext(shop?: string): Promise<SubmissionContext | null> {
   const session = await prisma.session.findFirst({
-    where: { shop },
+    where: shop ? { shop } : { isOnline: false },
     orderBy: [{ isOnline: "asc" }, { expires: "desc" }]
   });
 
-  if (!session?.accessToken) return null;
+  if (!session?.accessToken || !session.shop) return null;
 
   return {
-    session: { shop },
-    admin: createAdminClientFromToken(shop, session.accessToken)
+    session: { shop: session.shop },
+    admin: createAdminClientFromToken(session.shop, session.accessToken)
   };
 }
 
@@ -190,11 +190,14 @@ async function getSubmissionContext(
 
   const fallbackShop = getFallbackShop(request, getValue);
   if (!fallbackShop) {
-    return null;
+    return getStoredAdminContext();
   }
 
   try {
     const context = await unauthenticated.admin(fallbackShop);
+    if (!context.admin) {
+      return getStoredAdminContext(fallbackShop);
+    }
     return {
       session: { shop: context.session?.shop || fallbackShop },
       admin: context.admin
