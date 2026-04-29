@@ -28,9 +28,16 @@ const SUBMIT_BUILD_ID = "cod-submit-2026-04-29-1";
 
 function formatGraphqlErrors(
   userErrors: GraphqlUserError[] = [],
-  topLevelErrors: GraphqlTopLevelError[] = []
+  topLevelErrors: GraphqlTopLevelError[] | GraphqlTopLevelError | null = []
 ) {
-  const formattedUserErrors = userErrors
+  const safeUserErrors = Array.isArray(userErrors) ? userErrors : [];
+  const safeTopLevelErrors = Array.isArray(topLevelErrors)
+    ? topLevelErrors
+    : topLevelErrors
+      ? [topLevelErrors]
+      : [];
+
+  const formattedUserErrors = safeUserErrors
     .map((error) => {
       const field = Array.isArray(error.field)
         ? error.field.join(".")
@@ -39,7 +46,7 @@ function formatGraphqlErrors(
     })
     .filter(Boolean);
 
-  const formattedTopLevelErrors = topLevelErrors
+  const formattedTopLevelErrors = safeTopLevelErrors
     .map((error) => error.message)
     .filter(Boolean);
 
