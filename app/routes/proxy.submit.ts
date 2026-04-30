@@ -683,13 +683,6 @@ async function createRestOrderDirectly({
     country: "India",
     country_code: "IN"
   };
-  const customer = {
-    first_name: firstName,
-    last_name: lastName,
-    email: email || undefined,
-    phone,
-    default_address: address
-  };
   const response = await fetch(`https://${shop}/admin/api/2026-04/orders.json`, {
     method: "POST",
     headers: {
@@ -705,7 +698,6 @@ async function createRestOrderDirectly({
         inventory_behaviour: "decrement_ignoring_policy",
         send_receipt: false,
         send_fulfillment_receipt: false,
-        customer,
         tags: "Fast COD Pro, Cash on Delivery",
         note: [
           notes,
