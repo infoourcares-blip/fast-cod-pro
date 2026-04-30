@@ -349,6 +349,43 @@ function inferPostalCode(pincode: string, address1: string) {
   return String(address1 || "").match(/\b\d{6}\b/)?.[0] || "";
 }
 
+function normalizeCustomerPhone(value: string) {
+  const raw = String(value || "").trim();
+  const digits = raw.replace(/\D/g, "");
+
+  if (!digits) return "";
+
+  if (raw.startsWith("+")) {
+    return `+${digits}`;
+  }
+
+  if (digits.startsWith("00") && digits.length > 10) {
+    return `+${digits.slice(2)}`;
+  }
+
+  if (digits.length === 10) {
+    return `+91${digits}`;
+  }
+
+  if (digits.length === 11 && digits.startsWith("0")) {
+    return `+91${digits.slice(1)}`;
+  }
+
+  if (digits.length === 12 && digits.startsWith("91")) {
+    return `+${digits}`;
+  }
+
+  if (digits.length > 10 && digits.length <= 15) {
+    return `+${digits}`;
+  }
+
+  return raw;
+}
+
+function isValidShopifyPhone(value: string) {
+  return /^\+[1-9]\d{7,14}$/.test(value);
+}
+
 function buildShopifyCheckoutUrl({
   shop,
   rawVariantId,
@@ -791,7 +828,8 @@ async function handleSubmission(
     const profile = await getFunnelProfile(session.shop);
 
     const customerName = String(getValue("customerName") || "").trim();
-    const phone = String(getValue("phone") || "").trim();
+    const rawPhone = String(getValue("phone") || "").trim();
+    const phone = normalizeCustomerPhone(rawPhone);
     const email = String(getValue("email") || "").trim();
     const address1 = String(getValue("address1") || "").trim();
     const pincode = String(getValue("pincode") || "").trim();
@@ -808,6 +846,17 @@ async function handleSubmission(
         : "";
     if (!customerName || !phone || !variantId || !productTitle) {
       return storefrontResponse(request, { error: "Missing required COD form values." }, 400);
+    }
+
+    if (!isValidShopifyPhone(phone)) {
+      return storefrontResponse(
+        request,
+        {
+          error: "Phone number is invalid. Enter a valid 10-digit mobile number, for example 9718127346.",
+          orderCreated: false
+        },
+        422
+      );
     }
 
     let draftOrder:
@@ -848,7 +897,9 @@ async function handleSubmission(
           address1,
           city,
           pincode,
-          notes,
+          notes: [notes, rawPhone && rawPhone !== phone ? `Original phone: ${rawPhone}` : ""]
+            .filter(Boolean)
+            .join("\n"),
           rawVariantId,
           variantId,
           quantity
@@ -892,7 +943,9 @@ async function handleSubmission(
           variables: {
             input: {
               email: email || undefined,
-              note: notes || undefined,
+              note: [notes, rawPhone && rawPhone !== phone ? `Original phone: ${rawPhone}` : ""]
+                .filter(Boolean)
+                .join("\n") || undefined,
               shippingAddress: profile.collectAddress
                 ? {
                     address1: address1 || undefined,
@@ -910,6 +963,7 @@ async function handleSubmission(
               customAttributes: [
                 { key: "customer_name", value: customerName },
                 { key: "phone", value: phone },
+                { key: "original_phone", value: rawPhone },
                 { key: "payment_method", value: "Cash on Delivery" },
                 { key: "source", value: "fast_cod_pro_theme_form" }
               ]
