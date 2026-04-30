@@ -512,7 +512,35 @@ async function handleSubmission(
       | undefined;
     let draftError: string | null = null;
 
-    try {
+    if (hasOrderCreateScopes(session.scope)) {
+      try {
+        const directOrderResult = await createOrderDirectly({
+          admin,
+          customerName,
+          phone,
+          email,
+          address1,
+          city,
+          pincode,
+          notes,
+          variantId,
+          quantity
+        });
+
+        if (directOrderResult.order?.id) {
+          completedOrder = directOrderResult.order;
+        } else if (directOrderResult.error) {
+          draftError = `Direct Shopify order creation failed: ${directOrderResult.error}`;
+        } else {
+          draftError = "Direct Shopify order creation failed without an error message.";
+        }
+      } catch (error) {
+        draftError = `Direct Shopify order creation failed: ${error instanceof Error ? error.message : "Unknown error"}`;
+      }
+    }
+
+    if (!completedOrder?.id && !hasOrderCreateScopes(session.scope)) {
+      try {
       const draftOrderResponse = await admin.graphql(
         `#graphql
           mutation FastCodProCreateDraftOrder($input: DraftOrderInput!) {
@@ -603,6 +631,7 @@ async function handleSubmission(
     } catch (error) {
       draftError = error instanceof Error ? error.message : "Draft order creation failed.";
     }
+    }
 
     if (draftOrder?.id) {
       const completeDraftOrder = async (paymentPending: boolean) => {
@@ -685,32 +714,6 @@ async function handleSubmission(
         }
       } catch (error) {
         draftError = error instanceof Error ? error.message : "Order creation from draft failed.";
-      }
-    }
-
-    if (!completedOrder?.id && hasOrderCreateScopes(session.scope)) {
-      try {
-        const directOrderResult = await createOrderDirectly({
-          admin,
-          customerName,
-          phone,
-          email,
-          address1,
-          city,
-          pincode,
-          notes,
-          variantId,
-          quantity
-        });
-
-        if (directOrderResult.order?.id) {
-          completedOrder = directOrderResult.order;
-          draftError = null;
-        } else if (directOrderResult.error) {
-          draftError = `${draftError ? `${draftError} | ` : ""}${directOrderResult.error}`;
-        }
-      } catch (error) {
-        draftError = `${draftError ? `${draftError} | ` : ""}${error instanceof Error ? error.message : "Direct order creation failed."}`;
       }
     }
 
