@@ -466,6 +466,27 @@ async function createOrderDirectly({
 }) {
   const { firstName, lastName } = splitCustomerName(customerName);
   const postalCode = inferPostalCode(pincode, address1);
+
+  if (accessToken) {
+    const restOrderResult = await createRestOrderDirectly({
+      shop,
+      accessToken,
+      customerName,
+      phone,
+      email,
+      address1,
+      city,
+      pincode,
+      notes,
+      rawVariantId,
+      quantity
+    });
+
+    if (restOrderResult.order?.id) {
+      return restOrderResult;
+    }
+  }
+
   const response = await admin.graphql(
     `#graphql
       mutation FastCodProCreateOrder($order: OrderCreateOrderInput!) {
@@ -538,42 +559,11 @@ async function createOrderDirectly({
     payload.errors
   );
 
-  if (!accessToken) {
-    return {
-      order: null,
-      error:
-        graphqlError ||
-        `GraphQL orderCreate returned no order. HTTP ${response.status}. Payload: ${JSON.stringify(payload).slice(0, 500)}`
-    };
-  }
-
-  const restOrderResult = await createRestOrderDirectly({
-    shop,
-    accessToken,
-    customerName,
-    phone,
-    email,
-    address1,
-    city,
-    pincode,
-    notes,
-    rawVariantId,
-    quantity
-  });
-
-  if (restOrderResult.order?.id) {
-    return restOrderResult;
-  }
-
   return {
     order: null,
-    error: [
+    error:
       graphqlError ||
-        `GraphQL orderCreate returned no order. HTTP ${response.status}. Payload: ${JSON.stringify(payload).slice(0, 500)}`,
-      restOrderResult.error
-    ]
-      .filter(Boolean)
-      .join(" | ")
+      `GraphQL orderCreate returned no order. HTTP ${response.status}. Payload: ${JSON.stringify(payload).slice(0, 500)}`
   };
 }
 
@@ -619,6 +609,12 @@ async function createRestOrderDirectly({
     country: "India",
     country_code: "IN"
   };
+  const customer = {
+    first_name: firstName,
+    last_name: lastName,
+    email: email || undefined,
+    phone
+  };
   const response = await fetch(`https://${shop}/admin/api/2026-04/orders.json`, {
     method: "POST",
     headers: {
@@ -634,6 +630,7 @@ async function createRestOrderDirectly({
         inventory_behaviour: "decrement_ignoring_policy",
         send_receipt: false,
         send_fulfillment_receipt: false,
+        customer,
         tags: "Fast COD Pro, Cash on Delivery",
         note: [notes, "Payment method: Cash on Delivery", "Source: Fast COD Pro"]
           .filter(Boolean)
