@@ -349,6 +349,37 @@ function inferPostalCode(pincode: string, address1: string) {
   return String(address1 || "").match(/\b\d{6}\b/)?.[0] || "";
 }
 
+function normalizeSpaces(value: string) {
+  return String(value || "").replace(/\s+/g, " ").trim();
+}
+
+function cleanAddressLine(address1: string, postalCode: string, city: string) {
+  let cleaned = normalizeSpaces(address1);
+  const postal = normalizeSpaces(postalCode);
+  const cityName = normalizeSpaces(city);
+
+  if (postal) {
+    cleaned = cleaned.replace(new RegExp(`\\b${postal.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "g"), "");
+  }
+
+  if (cityName) {
+    cleaned = cleaned.replace(new RegExp(`\\b${cityName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "gi"), "");
+  }
+
+  return cleaned.replace(/\s*,\s*/g, ", ").replace(/^[,\s-]+|[,\s-]+$/g, "").replace(/\s+/g, " ").trim();
+}
+
+function cleanCityName(city: string, postalCode: string) {
+  const postal = normalizeSpaces(postalCode);
+  let cleaned = normalizeSpaces(city);
+
+  if (postal) {
+    cleaned = cleaned.replace(new RegExp(`\\b${postal.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "g"), "");
+  }
+
+  return cleaned.replace(/^[,\s-]+|[,\s-]+$/g, "").replace(/\s+/g, " ").trim();
+}
+
 function firstSubmittedValue(
   getValue: (key: string) => FormDataEntryValue | string | null,
   keys: string[]
@@ -430,7 +461,9 @@ function buildShopifyCheckoutUrl({
 
   const { firstName, lastName } = splitCustomerName(customerName);
   const postalCode = inferPostalCode(pincode, address1);
-  const addressText = visibleAddress(address1, city, postalCode);
+  const cleanAddress1 = cleanAddressLine(address1, postalCode, city);
+  const cleanCity = cleanCityName(city, postalCode);
+  const addressText = visibleAddress(cleanAddress1, cleanCity, postalCode);
   const contact = email || phone;
   const params = new URLSearchParams();
   if (email) params.set("checkout[email]", email);
@@ -439,8 +472,8 @@ function buildShopifyCheckoutUrl({
   params.set("checkout[shipping_address][first_name]", firstName);
   params.set("checkout[shipping_address][last_name]", lastName);
   params.set("checkout[shipping_address][phone]", phone);
-  params.set("checkout[shipping_address][address1]", address1);
-  params.set("checkout[shipping_address][city]", city);
+  params.set("checkout[shipping_address][address1]", cleanAddress1);
+  params.set("checkout[shipping_address][city]", cleanCity);
   params.set("checkout[shipping_address][zip]", postalCode);
   params.set("checkout[shipping_address][country]", "India");
   params.set("checkout[shipping_address][country_code]", "IN");
@@ -485,7 +518,9 @@ async function createOrderDirectly({
 }) {
   const { firstName, lastName } = splitCustomerName(customerName);
   const postalCode = inferPostalCode(pincode, address1);
-  const addressText = visibleAddress(address1, city, postalCode);
+  const cleanAddress1 = cleanAddressLine(address1, postalCode, city);
+  const cleanCity = cleanCityName(city, postalCode);
+  const addressText = visibleAddress(cleanAddress1, cleanCity, postalCode);
 
   if (accessToken) {
     const restOrderResult = await createRestOrderDirectly({
@@ -549,8 +584,8 @@ async function createOrderDirectly({
           shippingAddress: {
             firstName,
             lastName,
-            address1,
-            city,
+            address1: cleanAddress1,
+            city: cleanCity,
             phone,
             zip: postalCode,
             countryCode: "IN"
@@ -560,7 +595,7 @@ async function createOrderDirectly({
             { key: "payment_method", value: "Cash on Delivery" },
             { key: "customer_phone", value: phone },
             { key: "delivery_address", value: addressText },
-            { key: "city", value: city },
+            { key: "city", value: cleanCity },
             { key: "pincode", value: postalCode },
             { key: "source", value: "fast_cod_pro_theme_form" }
           ].filter((item) => item.value)
@@ -635,13 +670,14 @@ async function createRestOrderDirectly({
 
   const { firstName, lastName } = splitCustomerName(customerName);
   const postalCode = inferPostalCode(pincode, address1);
-  const addressText = visibleAddress(address1, city, postalCode);
+  const cleanAddress1 = cleanAddressLine(address1, postalCode, city);
+  const cleanCity = cleanCityName(city, postalCode);
+  const addressText = visibleAddress(cleanAddress1, cleanCity, postalCode);
   const address = {
-    name: customerName,
     first_name: firstName,
     last_name: lastName,
-    address1,
-    city,
+    address1: cleanAddress1,
+    city: cleanCity,
     zip: postalCode,
     phone,
     country: "India",
@@ -700,7 +736,7 @@ async function createRestOrderDirectly({
           { name: "payment_method", value: "Cash on Delivery" },
           { name: "customer_phone", value: phone },
           { name: "delivery_address", value: addressText },
-          { name: "city", value: city },
+          { name: "city", value: cleanCity },
           { name: "pincode", value: postalCode },
           { name: "source", value: "fast_cod_pro_theme_form" }
         ].filter((item) => item.value)
@@ -915,6 +951,10 @@ async function handleSubmission(
     const rawVariantId = String(getValue("variantId") || "").trim();
     const price = Number(getValue("price") || 0);
     const quantity = Number(getValue("quantity") || 1);
+    const postalCode = inferPostalCode(pincode, address1);
+    const cleanAddress1 = cleanAddressLine(address1, postalCode, city);
+    const cleanCity = cleanCityName(city, postalCode);
+    const cleanAddressText = visibleAddress(cleanAddress1, cleanCity, postalCode);
     const variantId = rawVariantId.startsWith("gid://shopify/ProductVariant/")
       ? rawVariantId
       : rawVariantId
@@ -1026,10 +1066,10 @@ async function handleSubmission(
                 ? {
                     firstName: splitCustomerName(customerName).firstName || undefined,
                     lastName: splitCustomerName(customerName).lastName || undefined,
-                    address1: address1 || undefined,
-                    city: city || undefined,
+                    address1: cleanAddress1 || undefined,
+                    city: cleanCity || undefined,
                     phone: phone || undefined,
-                    zip: inferPostalCode(pincode, address1) || undefined,
+                    zip: postalCode || undefined,
                     countryCode: "IN"
                   }
                 : undefined,
@@ -1043,9 +1083,9 @@ async function handleSubmission(
                 { key: "customer_name", value: customerName },
                 { key: "phone", value: phone },
                 { key: "original_phone", value: rawPhone },
-                { key: "delivery_address", value: visibleAddress(address1, city, inferPostalCode(pincode, address1)) },
-                { key: "city", value: city },
-                { key: "pincode", value: inferPostalCode(pincode, address1) },
+                { key: "delivery_address", value: cleanAddressText },
+                { key: "city", value: cleanCity },
+                { key: "pincode", value: postalCode },
                 { key: "payment_method", value: "Cash on Delivery" },
                 { key: "source", value: "fast_cod_pro_theme_form" }
               ].filter((item) => item.value)
@@ -1188,9 +1228,9 @@ async function handleSubmission(
         customerName,
         phone,
         email: email || null,
-        address1: address1 || null,
-        city: city || null,
-        notes: [notes, pincode ? `Pincode: ${pincode}` : ""].filter(Boolean).join("\n") || null,
+        address1: cleanAddress1 || null,
+        city: cleanCity || null,
+        notes: [notes, postalCode ? `Pincode: ${postalCode}` : ""].filter(Boolean).join("\n") || null,
         productTitle,
         variantId,
         quantity,
