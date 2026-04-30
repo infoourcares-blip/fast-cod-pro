@@ -20,7 +20,12 @@ type AdminClient = {
 };
 
 type SubmissionContext = {
-  session: { shop: string; scope?: string | null; isOnline?: boolean | null };
+  session: {
+    shop: string;
+    scope?: string | null;
+    isOnline?: boolean | null;
+    accessToken?: string | null;
+  };
   admin: AdminClient;
 };
 
@@ -260,6 +265,8 @@ function buildShopifyCheckoutUrl({
 
 async function createOrderDirectly({
   admin,
+  shop,
+  accessToken,
   customerName,
   phone,
   email,
@@ -267,10 +274,13 @@ async function createOrderDirectly({
   city,
   pincode,
   notes,
+  rawVariantId,
   variantId,
   quantity
 }: {
   admin: AdminClient;
+  shop: string;
+  accessToken?: string | null;
   customerName: string;
   phone: string;
   email: string;
@@ -278,6 +288,7 @@ async function createOrderDirectly({
   city: string;
   pincode: string;
   notes: string;
+  rawVariantId: string;
   variantId: string;
   quantity: number;
 }) {
@@ -342,9 +353,157 @@ async function createOrderDirectly({
     };
   };
 
+  const graphqlOrder = payload.data?.orderCreate?.order;
+  if (graphqlOrder?.id) {
+    return {
+      order: graphqlOrder,
+      error: ""
+    };
+  }
+
+  const graphqlError = formatGraphqlErrors(
+    payload.data?.orderCreate?.userErrors ?? [],
+    payload.errors
+  );
+
+  if (!accessToken) {
+    return {
+      order: null,
+      error:
+        graphqlError ||
+        `GraphQL orderCreate returned no order. HTTP ${response.status}. Payload: ${JSON.stringify(payload).slice(0, 500)}`
+    };
+  }
+
+  const restOrderResult = await createRestOrderDirectly({
+    shop,
+    accessToken,
+    customerName,
+    phone,
+    email,
+    address1,
+    city,
+    pincode,
+    notes,
+    rawVariantId,
+    quantity
+  });
+
+  if (restOrderResult.order?.id) {
+    return restOrderResult;
+  }
+
   return {
-    order: payload.data?.orderCreate?.order,
-    error: formatGraphqlErrors(payload.data?.orderCreate?.userErrors ?? [], payload.errors)
+    order: null,
+    error: [
+      graphqlError ||
+        `GraphQL orderCreate returned no order. HTTP ${response.status}. Payload: ${JSON.stringify(payload).slice(0, 500)}`,
+      restOrderResult.error
+    ]
+      .filter(Boolean)
+      .join(" | ")
+  };
+}
+
+async function createRestOrderDirectly({
+  shop,
+  accessToken,
+  customerName,
+  phone,
+  email,
+  address1,
+  city,
+  pincode,
+  notes,
+  rawVariantId,
+  quantity
+}: {
+  shop: string;
+  accessToken: string;
+  customerName: string;
+  phone: string;
+  email: string;
+  address1: string;
+  city: string;
+  pincode: string;
+  notes: string;
+  rawVariantId: string;
+  quantity: number;
+}) {
+  const variantNumericId = numericVariantId(rawVariantId);
+  if (!variantNumericId) {
+    return { order: null, error: "Missing numeric product variant ID for REST order create." };
+  }
+
+  const { firstName, lastName } = splitCustomerName(customerName);
+  const postalCode = inferPostalCode(pincode, address1);
+  const address = {
+    first_name: firstName,
+    last_name: lastName,
+    address1,
+    city,
+    zip: postalCode,
+    phone,
+    country: "India",
+    country_code: "IN"
+  };
+  const response = await fetch(`https://${shop}/admin/api/2026-04/orders.json`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Shopify-Access-Token": accessToken
+    },
+    body: JSON.stringify({
+      order: {
+        email: email || undefined,
+        phone,
+        financial_status: "pending",
+        fulfillment_status: null,
+        inventory_behaviour: "decrement_ignoring_policy",
+        send_receipt: false,
+        send_fulfillment_receipt: false,
+        tags: "Fast COD Pro, Cash on Delivery",
+        note: [notes, "Payment method: Cash on Delivery", "Source: Fast COD Pro"]
+          .filter(Boolean)
+          .join("\n"),
+        line_items: [
+          {
+            variant_id: Number(variantNumericId),
+            quantity: Math.max(1, quantity)
+          }
+        ],
+        shipping_address: address,
+        billing_address: address,
+        note_attributes: [
+          { name: "payment_method", value: "Cash on Delivery" },
+          { name: "customer_phone", value: phone },
+          { name: "source", value: "fast_cod_pro_theme_form" }
+        ]
+      }
+    })
+  });
+  const responseText = await response.text();
+  let payload: { order?: { id?: number; name?: string | null }; errors?: unknown } = {};
+
+  try {
+    payload = JSON.parse(responseText);
+  } catch (_error) {
+    payload = {};
+  }
+
+  if (response.ok && payload.order?.id) {
+    return {
+      order: {
+        id: `gid://shopify/Order/${payload.order.id}`,
+        name: payload.order.name || null
+      },
+      error: ""
+    };
+  }
+
+  return {
+    order: null,
+    error: `REST order create failed. HTTP ${response.status}. ${responseText.slice(0, 700)}`
   };
 }
 
@@ -366,7 +525,12 @@ async function getStoredAdminContext(shop?: string): Promise<SubmissionContext |
   if (!session?.accessToken || !session.shop) return null;
 
   return {
-    session: { shop: session.shop, scope: session.scope, isOnline: session.isOnline },
+    session: {
+      shop: session.shop,
+      scope: session.scope,
+      isOnline: session.isOnline,
+      accessToken: session.accessToken
+    },
     admin: createAdminClientFromToken(session.shop, session.accessToken)
   };
 }
@@ -516,6 +680,8 @@ async function handleSubmission(
       try {
         const directOrderResult = await createOrderDirectly({
           admin,
+          shop: session.shop,
+          accessToken: session.accessToken,
           customerName,
           phone,
           email,
@@ -523,6 +689,7 @@ async function handleSubmission(
           city,
           pincode,
           notes,
+          rawVariantId,
           variantId,
           quantity
         });
