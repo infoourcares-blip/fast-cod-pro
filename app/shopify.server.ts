@@ -33,6 +33,9 @@ const shopify = shopifyApp({
   authPathPrefix: "/auth",
   sessionStorage: new PrismaSessionStorage(prisma),
   distribution: AppDistribution.AppStore,
+  future: {
+    expiringOfflineAccessTokens: true
+  },
   billing: {
     [LAUNCH_PLAN]: {
       lineItems: [

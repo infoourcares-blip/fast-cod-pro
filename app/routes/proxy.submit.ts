@@ -1,4 +1,5 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import type { Session as StoredShopifySession } from "@prisma/client";
 import prisma from "../db.server";
 import { getFunnelProfile } from "../lib/funnel.server";
 import { authenticate, unauthenticated } from "../shopify.server";
@@ -27,9 +28,21 @@ type SubmissionContext = {
     accessToken?: string | null;
   };
   admin: AdminClient;
+  tokenIssue?: string;
 };
 
 const SUBMIT_BUILD_ID = "cod-submit-2026-04-29-1";
+const OFFLINE_TOKEN_REFRESH_WINDOW_MS = 5 * 60 * 1000;
+const TOKEN_EXCHANGE_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:token-exchange";
+const OFFLINE_TOKEN_TYPE = "urn:shopify:params:oauth:token-type:offline-access-token";
+
+type OfflineTokenResponse = {
+  access_token?: string;
+  scope?: string;
+  expires_in?: number;
+  refresh_token?: string;
+  refresh_token_expires_in?: number;
+};
 
 function formatGraphqlErrors(
   userErrors: GraphqlUserError[] = [],
@@ -170,6 +183,128 @@ function createAdminClientFromToken(shop: string, accessToken: string): AdminCli
         })
       })
   };
+}
+
+function secondsFromNow(seconds?: number | null) {
+  return typeof seconds === "number" && Number.isFinite(seconds)
+    ? new Date(Date.now() + seconds * 1000)
+    : null;
+}
+
+async function requestOfflineToken(shop: string, body: Record<string, string>, label: string) {
+  const apiKey = process.env.SHOPIFY_API_KEY;
+  const apiSecret = process.env.SHOPIFY_API_SECRET;
+
+  if (!apiKey || !apiSecret) {
+    throw new Error("Shopify API key/secret missing on the server.");
+  }
+
+  const response = await fetch(`https://${shop}/admin/oauth/access_token`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json"
+    },
+    body: JSON.stringify({
+      client_id: apiKey,
+      client_secret: apiSecret,
+      ...body
+    })
+  });
+  const text = await response.text();
+  let payload: OfflineTokenResponse = {};
+
+  try {
+    payload = JSON.parse(text) as OfflineTokenResponse;
+  } catch (_error) {
+    payload = {};
+  }
+
+  if (!response.ok) {
+    throw new Error(`${label} failed. HTTP ${response.status}. ${text.slice(0, 500)}`);
+  }
+
+  if (!payload.access_token) {
+    throw new Error(`${label} failed. Shopify did not return an access token.`);
+  }
+
+  return payload;
+}
+
+async function updateStoredOfflineToken(
+  session: StoredShopifySession,
+  payload: OfflineTokenResponse
+) {
+  const tokenUpdate = {
+    accessToken: payload.access_token || session.accessToken,
+    scope: payload.scope || session.scope,
+    expires: secondsFromNow(payload.expires_in) || session.expires,
+    refreshToken: payload.refresh_token || session.refreshToken,
+    refreshTokenExpires:
+      secondsFromNow(payload.refresh_token_expires_in) || session.refreshTokenExpires
+  };
+
+  await prisma.session.update({
+    where: { id: session.id },
+    data: tokenUpdate
+  });
+
+  return {
+    ...session,
+    ...tokenUpdate
+  };
+}
+
+async function migrateStoredOfflineToken(session: StoredShopifySession) {
+  const payload = await requestOfflineToken(
+    session.shop,
+    {
+      grant_type: TOKEN_EXCHANGE_GRANT_TYPE,
+      subject_token: session.accessToken,
+      subject_token_type: OFFLINE_TOKEN_TYPE,
+      requested_token_type: OFFLINE_TOKEN_TYPE,
+      expiring: "1"
+    },
+    "Shopify offline token migration"
+  );
+
+  return updateStoredOfflineToken(session, payload);
+}
+
+async function refreshStoredOfflineToken(session: StoredShopifySession) {
+  if (!session.refreshToken) {
+    return migrateStoredOfflineToken(session);
+  }
+
+  const payload = await requestOfflineToken(
+    session.shop,
+    {
+      grant_type: "refresh_token",
+      refresh_token: session.refreshToken
+    },
+    "Shopify offline token refresh"
+  );
+
+  return updateStoredOfflineToken(session, payload);
+}
+
+async function ensureStoredSessionHasFreshToken(session: StoredShopifySession) {
+  if (session.isOnline) return session;
+
+  const tokenExpiresSoon =
+    session.expires &&
+    session.expires.getTime() - OFFLINE_TOKEN_REFRESH_WINDOW_MS <= Date.now();
+  const hasLegacyNonExpiringToken = !session.expires || !session.refreshToken;
+
+  if (hasLegacyNonExpiringToken) {
+    return migrateStoredOfflineToken(session);
+  }
+
+  if (tokenExpiresSoon) {
+    return refreshStoredOfflineToken(session);
+  }
+
+  return session;
 }
 
 function scopeList(scope?: string | null) {
@@ -524,14 +659,28 @@ async function getStoredAdminContext(shop?: string): Promise<SubmissionContext |
 
   if (!session?.accessToken || !session.shop) return null;
 
+  let usableSession = session;
+  let tokenIssue = "";
+
+  try {
+    usableSession = await ensureStoredSessionHasFreshToken(session);
+  } catch (error) {
+    tokenIssue = error instanceof Error ? error.message : "Shopify token refresh failed.";
+    console.error("Fast COD Pro could not refresh Shopify offline token", {
+      shop: session.shop,
+      tokenIssue
+    });
+  }
+
   return {
     session: {
-      shop: session.shop,
-      scope: session.scope,
-      isOnline: session.isOnline,
-      accessToken: session.accessToken
+      shop: usableSession.shop,
+      scope: usableSession.scope,
+      isOnline: usableSession.isOnline,
+      accessToken: usableSession.accessToken
     },
-    admin: createAdminClientFromToken(session.shop, session.accessToken)
+    admin: createAdminClientFromToken(usableSession.shop, usableSession.accessToken),
+    tokenIssue
   };
 }
 
@@ -628,6 +777,17 @@ async function handleSubmission(
     }
 
     const { session, admin } = context;
+    if (context.tokenIssue) {
+      return storefrontResponse(
+        request,
+        {
+          error: `Shopify token refresh failed: ${context.tokenIssue}. Open the Fast COD Pro app once inside Shopify admin, approve the new permissions, then submit again.`,
+          orderCreated: false
+        },
+        422
+      );
+    }
+
     const profile = await getFunnelProfile(session.shop);
 
     const customerName = String(getValue("customerName") || "").trim();
