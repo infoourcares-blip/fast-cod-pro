@@ -14,7 +14,7 @@
 
 - `read_products`: used to show product context in the embedded dashboard and product-related COD setup.
 - `write_app_proxy`: used for storefront app proxy routes that load COD form configuration and accept COD submissions.
-- `write_draft_orders`: used to create Draft Orders from COD submissions so merchants can review and complete COD workflows from Shopify.
+- `write_orders`: used to create Shopify Orders directly when a customer submits the COD form. Orders are created with payment pending, COD tags, product line item, customer phone, delivery address, and merchant notes.
 
 ## Customer data handling
 
@@ -40,8 +40,9 @@ The app handles:
 4. Open the theme editor and enable the Fast Cod Pro theme app block on a product page template.
 5. Visit a product page on the storefront.
 6. Open the COD popup and submit a test COD request.
-7. Return to Fast Cod Pro > Orders Queue and confirm the submission appears.
-8. If DraftOrder access is unavailable in the review store, the app stores the request for manual review instead of blocking the customer flow.
+7. Confirm the customer sees the Fast Cod Pro thank-you page.
+8. Return to Shopify Admin > Orders and confirm the COD order appears with payment pending, customer details, delivery address, product, and COD tags.
+9. Return to Fast Cod Pro > Orders Queue and confirm the submission appears.
 
 ## Test customer data
 
@@ -55,7 +56,7 @@ The app handles:
 ## Pre-submission checks
 
 - Rotate any exposed Shopify app secrets before submission.
-- Update Railway `SCOPES` to `read_products,write_app_proxy,write_draft_orders`.
+- Remove old `SCOPES` values from Railway if present. The app now requests `read_products,write_orders,write_app_proxy` from `shopify.app.toml`.
 - Set `SHOPIFY_BILLING_TEST=false` for live billing, or `true` only for a development review flow.
 - Release the latest Shopify app configuration version.
 - Reinstall the app in the test store after scope or secret changes.

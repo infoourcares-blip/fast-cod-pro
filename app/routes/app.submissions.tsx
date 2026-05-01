@@ -68,7 +68,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       "Amount",
       "Currency",
       "Created At",
-      "Draft Error",
+      "Order Error",
     ];
 
     const rows = submissions.map((submission) => {
@@ -254,9 +254,9 @@ export default function SubmissionsRoute() {
                     </div>
 
                     <div className="queueInfoBlock">
-                      <div className="queueInfoLabel">Draft order status</div>
+                      <div className="queueInfoLabel">Shopify order status</div>
                       <div className="queueInfoValue">
-                        {submission.draftOrderId ? "Draft order created" : "Manual review required"}
+                        {submission.status === "confirmed" ? "Shopify order created" : "Manual review required"}
                       </div>
                       {submission.parsedPayload?.draftError ? (
                         <div className="queueAlert">{submission.parsedPayload.draftError}</div>

@@ -2,19 +2,20 @@
 
 ## One-line value proposition
 
-Fast Cod Pro helps COD-first Shopify stores replace checkout friction with a fast COD launcher, popup form, order queue, exports, automations, and fraud controls.
+Fast Cod Pro helps COD-first Shopify stores replace checkout friction with a fast COD launcher, popup form, Shopify order creation, order queue, exports, and fraud controls.
 
 ## Short description
 
-Launch a branded cash-on-delivery flow with popup COD forms, queue management, exports, offers, fraud rules, and merchant automations.
+Launch a branded cash-on-delivery flow with popup COD forms, direct Shopify order creation, queue management, exports, and fraud rules.
 
 ## Full description
 
-Fast Cod Pro is built for merchants who want a cleaner cash-on-delivery buying experience than the standard checkout. Add a storefront COD launcher button, collect delivery details in a focused popup, save order intent into an operational queue, and manage the full workflow from inside Shopify admin.
+Fast Cod Pro is built for merchants who want a cleaner cash-on-delivery buying experience than the standard checkout. Add a storefront COD launcher button, collect delivery details in a focused popup, create Shopify Orders with payment pending, and manage the full workflow from inside Shopify admin.
 
 ### Core features
 
 - COD launcher button and popup checkout experience
+- Direct Shopify Order creation with COD tags and payment pending status
 - Form Designer with customizable fields
 - Orders Queue with search, filters, CSV export, and status management
 - Fraud Prevention rules and merchant automation controls
@@ -27,7 +28,7 @@ Fast Cod Pro is built for merchants who want a cleaner cash-on-delivery buying e
 - COD-first stores
 - stores selling on Meta, TikTok, or other paid traffic channels
 - merchants who need a lightweight COD lead and confirmation workflow
-- teams that want CSV export and manual review when automatic draft order creation is unavailable
+- teams that want Shopify Orders plus CSV export for COD operations
 
 ## Required listing assets to prepare
 
@@ -37,7 +38,7 @@ Fast Cod Pro is built for merchants who want a cleaner cash-on-delivery buying e
 - Short demo video or GIF
 - Support email and legal page URLs
 - Shopify review test store credentials and steps
-- Explanation for DraftOrder/customer data use in the app review form
+- Explanation for order creation and customer data use in the app review form
 
 ## Production URLs
 
@@ -51,7 +52,7 @@ Fast Cod Pro is built for merchants who want a cleaner cash-on-delivery buying e
 
 ## Shopify review notes
 
-Fast Cod Pro uses `read_products` to show recent products in the merchant dashboard, `write_app_proxy` for storefront COD form proxy routes, and `write_draft_orders` to create draft orders from COD submissions. Customer data collected by the COD form is stored so merchants can review, confirm, export, or delete submissions.
+Fast Cod Pro uses `read_products` to show product context, `write_app_proxy` for storefront COD form proxy routes, and `write_orders` to create Shopify Orders from COD submissions. Customer data collected by the COD form is used to create the order, show it in the app queue, support export, and honor deletion/redaction requests.
 
 ## Reviewer Test Instructions
 
@@ -60,8 +61,9 @@ Fast Cod Pro uses `read_products` to show recent products in the merchant dashbo
 3. Open Form Designer and verify the COD form fields are configurable.
 4. Open the theme editor, enable the Fast Cod Pro theme app block on a product template, and save.
 5. Visit a product page, open the COD popup, and submit a test COD request with sample customer details.
-6. Return to the app and verify the submission appears in Orders Queue.
-7. If DraftOrder access is not approved for the review store, the submission is saved with manual review status and the merchant can still process it from Orders Queue.
+6. Confirm the thank-you page opens after submission.
+7. Return to Shopify Admin > Orders and verify the COD order appears with payment pending status, customer details, delivery address, product, and COD tags.
+8. Return to the app and verify the submission appears in Orders Queue.
 
 ## Suggested screenshots
 

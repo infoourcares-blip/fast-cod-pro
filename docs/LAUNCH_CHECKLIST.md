@@ -16,7 +16,7 @@
 
 ## Must complete before App Store submission
 
-- Get DraftOrder access and customer data handling approval from Shopify
+- Get protected customer data handling approval from Shopify
 - Rotate the Shopify app secret that was exposed during setup screenshots
 - Run full QA on desktop and mobile themes
 - Verify billing scenarios end-to-end
@@ -40,4 +40,5 @@
 
 ## Current known blocker
 
-- Automatic DraftOrder creation depends on Shopify approving DraftOrder access for this app.
+- Rotate the exposed Shopify app secret before public App Store submission.
+- Run one final storefront test after the latest deploy and confirm the Shopify order includes customer name, phone, shipping address, product, price, COD tags, and payment pending status.

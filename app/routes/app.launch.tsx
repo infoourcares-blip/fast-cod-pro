@@ -8,13 +8,13 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const summary = await getFunnelSummary(session.shop);
   const latestSubmission = summary.profile.submissions[0] ?? null;
 
-  let draftOrderWarning: string | null = null;
+  let orderWarning: string | null = null;
   if (latestSubmission?.payloadJson) {
     try {
       const payload = JSON.parse(latestSubmission.payloadJson) as { draftError?: string };
-      draftOrderWarning = payload.draftError || null;
+      orderWarning = payload.draftError || null;
     } catch {
-      draftOrderWarning = null;
+      orderWarning = null;
     }
   }
 
@@ -48,10 +48,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     },
     {
       title: "Protected customer data approval",
-      status: draftOrderWarning ? "blocked" : "pending",
-      detail: draftOrderWarning
-        ? "Draft orders are blocked until Shopify approves DraftOrder access for this app."
-        : "Apply for protected customer data and verify DraftOrder access in a production review store.",
+      status: orderWarning ? "blocked" : "pending",
+      detail: orderWarning
+        ? "The latest Shopify order creation test returned an error. Fix it before App Store submission."
+        : "Apply for protected customer data access because the app collects name, phone, email, and delivery address.",
     },
     {
       title: "Production billing validation",
@@ -68,12 +68,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   return {
     summary,
     checklist,
-    draftOrderWarning,
+    orderWarning,
   };
 };
 
 export default function LaunchRoute() {
-  const { checklist, draftOrderWarning } = useLoaderData<typeof loader>();
+  const { checklist, orderWarning } = useLoaderData<typeof loader>();
   const completed = checklist.filter((item) => item.status === "done").length;
 
   return (
@@ -94,19 +94,19 @@ export default function LaunchRoute() {
           </div>
         </section>
 
-        {draftOrderWarning ? (
+        {orderWarning ? (
           <section className="warningCard">
             <div className="panelHeader">
               <div>
                 <p className="eyebrow">Critical blocker</p>
-                <h3 className="panelTitle">Draft order approval is still pending</h3>
+                <h3 className="panelTitle">Latest order test needs attention</h3>
                 <p className="panelText">
-                  Everything else can be prepared locally, but automatic draft order creation needs
-                  Shopify protected customer data approval before full App Store launch.
+                  Everything else can be prepared locally, but the storefront COD submit must create
+                  a Shopify order cleanly before full App Store launch.
                 </p>
               </div>
             </div>
-            <div className="warningDetail">{draftOrderWarning}</div>
+            <div className="warningDetail">{orderWarning}</div>
           </section>
         ) : null}
 
