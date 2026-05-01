@@ -14,6 +14,31 @@ type BillingState = {
   hasActivePayment: boolean;
 };
 
+function isRedirectResponse(error: unknown): error is Response {
+  return (
+    error instanceof Response ||
+    (typeof error === "object" &&
+      error !== null &&
+      "status" in error &&
+      "headers" in error &&
+      typeof (error as { status?: unknown }).status === "number" &&
+      (Number((error as { status: number }).status) >= 300 ||
+        Number((error as { status: number }).status) === 401))
+  );
+}
+
+function getErrorMessage(error: unknown) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  if (typeof error === "object" && error !== null && "message" in error) {
+    return String((error as { message?: unknown }).message || "");
+  }
+
+  return String(error || "");
+}
+
 const planCatalog = [
   {
     id: "free",
@@ -128,14 +153,17 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         returnUrl: `${process.env.SHOPIFY_APP_URL}/app/billing`
       });
     } catch (error) {
-      if (error instanceof Response) {
+      if (isRedirectResponse(error)) {
         throw error;
       }
 
       console.error("Unable to start Shopify billing request", error);
+      const message = getErrorMessage(error);
       return {
         status: "error" as const,
-        message: "Shopify billing could not be started for this store. Try again after the app is installed from a fresh session.",
+        message: message
+          ? `Shopify billing could not be started: ${message}`
+          : "Shopify billing could not be started for this store. Try again after the app is installed from a fresh session.",
       };
     }
   }
