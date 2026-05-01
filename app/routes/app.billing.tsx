@@ -128,6 +128,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         returnUrl: `${process.env.SHOPIFY_APP_URL}/app/billing`
       });
     } catch (error) {
+      if (error instanceof Response) {
+        throw error;
+      }
+
       console.error("Unable to start Shopify billing request", error);
       return {
         status: "error" as const,
