@@ -156,18 +156,6 @@ function getFallbackShop(
   return "";
 }
 
-function isTrustedStorefrontRequest(request: Request, shop: string) {
-  const origin = request.headers.get("origin") || "";
-  const referer = request.headers.get("referer") || "";
-  const forwardedHost = request.headers.get("x-forwarded-host") || "";
-  const host = request.headers.get("host") || "";
-  const trustedHosts = [origin, referer, forwardedHost, host]
-    .filter(Boolean)
-    .map((value) => value.toLowerCase());
-
-  return trustedHosts.some((value) => value.includes(shop));
-}
-
 function createAdminClientFromToken(shop: string, accessToken: string): AdminClient {
   return {
     graphql: async (query, options) =>
@@ -431,60 +419,6 @@ function normalizeCustomerPhone(value: string) {
 
 function isValidShopifyPhone(value: string) {
   return /^\+[1-9]\d{7,14}$/.test(value);
-}
-
-function buildShopifyCheckoutUrl({
-  shop,
-  rawVariantId,
-  quantity,
-  customerName,
-  phone,
-  email,
-  address1,
-  city,
-  pincode,
-  notes
-}: {
-  shop: string;
-  rawVariantId: string;
-  quantity: number;
-  customerName: string;
-  phone: string;
-  email: string;
-  address1: string;
-  city: string;
-  pincode: string;
-  notes: string;
-}) {
-  const variantNumericId = numericVariantId(rawVariantId);
-  if (!variantNumericId) return null;
-
-  const { firstName, lastName } = splitCustomerName(customerName);
-  const postalCode = inferPostalCode(pincode, address1);
-  const cleanAddress1 = cleanAddressLine(address1, postalCode, city);
-  const cleanCity = cleanCityName(city, postalCode);
-  const addressText = visibleAddress(cleanAddress1, cleanCity, postalCode);
-  const contact = email || phone;
-  const params = new URLSearchParams();
-  if (email) params.set("checkout[email]", email);
-  params.set("checkout[phone]", phone);
-  params.set("checkout[contact]", contact);
-  params.set("checkout[shipping_address][first_name]", firstName);
-  params.set("checkout[shipping_address][last_name]", lastName);
-  params.set("checkout[shipping_address][phone]", phone);
-  params.set("checkout[shipping_address][address1]", cleanAddress1);
-  params.set("checkout[shipping_address][city]", cleanCity);
-  params.set("checkout[shipping_address][zip]", postalCode);
-  params.set("checkout[shipping_address][country]", "India");
-  params.set("checkout[shipping_address][country_code]", "IN");
-  params.set("attributes[Fast COD Pro]", "true");
-  params.set("attributes[Customer name]", customerName);
-  params.set("attributes[Customer phone]", phone);
-  if (addressText) params.set("attributes[Delivery address]", addressText);
-  if (postalCode) params.set("attributes[Pincode]", postalCode);
-  if (notes) params.set("attributes[Order notes]", notes);
-
-  return `https://${shop}/cart/${variantNumericId}:${Math.max(1, quantity)}?${params.toString()}`;
 }
 
 async function createOrderDirectly({

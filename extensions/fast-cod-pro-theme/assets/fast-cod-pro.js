@@ -245,17 +245,6 @@
     }
   }
 
-  function resetCodForm(container) {
-    container.querySelectorAll(".fast-cod-pro-grid input, .fast-cod-pro-grid textarea, .fast-cod-pro-grid select").forEach(function (field) {
-      if (!field.name || ["quantity", "variantId", "productTitle", "price"].includes(field.name)) return;
-      if (field.type === "checkbox" || field.type === "radio") {
-        field.checked = false;
-      } else {
-        field.value = "";
-      }
-    });
-  }
-
   async function enhanceFields(container, endpoint, accentColor) {
     try {
       var response = await fetch(endpoint, { headers: { Accept: "application/json" } });
