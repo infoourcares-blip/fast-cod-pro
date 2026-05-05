@@ -2,7 +2,12 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { Form, Link, useActionData, useLoaderData } from "react-router";
 import { useMemo, useState } from "react";
 import { authenticate } from "../shopify.server";
-import { EMPIRE_PLAN, LAUNCH_PLAN, SCALE_PLAN } from "../lib/billing-plans";
+import {
+  PAID_BILLING_PLANS,
+  UNLIMITED_ANNUAL_PLAN,
+  UNLIMITED_MONTHLY_PLAN,
+  type PaidBillingPlan,
+} from "../lib/billing-plans";
 import { getFunnelSummary } from "../lib/funnel.server";
 
 type ActionData = {
@@ -13,6 +18,13 @@ type ActionData = {
 type BillingState = {
   hasActivePayment: boolean;
 };
+
+const FREE_PLAN_ID = "free";
+const UNLIMITED_PLAN_ID = "unlimited";
+const FREE_ORDER_LIMIT = 100;
+const UNLIMITED_MONTHLY_PRICE = 10;
+const UNLIMITED_ANNUAL_PRICE = 102;
+const ANNUAL_DISCOUNT_PERCENT = 15;
 
 function isRedirectResponse(error: unknown): error is Response {
   return (
@@ -28,82 +40,58 @@ function isRedirectResponse(error: unknown): error is Response {
 }
 
 function getErrorMessage(error: unknown) {
+  const errorData =
+    typeof error === "object" && error !== null && "errorData" in error
+      ? (error as { errorData?: unknown }).errorData
+      : null;
+
+  const errorDetails = errorData
+    ? ` Details: ${JSON.stringify(errorData)}`
+    : "";
+
   if (error instanceof Error) {
-    return error.message;
+    return `${error.message}${errorDetails}`;
   }
 
   if (typeof error === "object" && error !== null && "message" in error) {
-    return String((error as { message?: unknown }).message || "");
+    return `${String((error as { message?: unknown }).message || "")}${errorDetails}`;
   }
 
-  return String(error || "");
+  return `${String(error || "")}${errorDetails}`;
 }
 
 const planCatalog = [
   {
-    id: "free",
-    name: "Forever Free for India",
+    id: FREE_PLAN_ID,
+    name: "Free",
     monthlyPrice: 0,
-    usageLimit: 150,
-    description: "Start COD without monthly billing.",
+    annualPrice: 0,
+    usageLimit: FREE_ORDER_LIMIT,
+    description: "Start with 100 COD orders every month.",
     features: [
-      "150 Orders/Month",
-      "Original form design",
-      "Basic fraud prevention",
-      "Address validation and recovery",
-      "Analytics dashboard",
+      "100 COD orders/month",
+      "Fast COD form on product pages",
+      "Orders created in Shopify",
+      "Basic order dashboard",
     ],
     cta: "Current free plan",
     variant: "free",
   },
   {
-    id: LAUNCH_PLAN,
-    name: "Premium for India",
-    monthlyPrice: 7.99,
-    usageLimit: 800,
-    description: "20% lower than the reference pricing.",
-    features: [
-      "All Free Plan features",
-      "800 Orders/Month",
-      "Personalized coverages",
-      "Advanced fraud prevention",
-      "Advanced form templates",
-      "24/7 live chat support",
-    ],
-    cta: "Select Premium",
-    variant: "standard",
-  },
-  {
-    id: SCALE_PLAN,
-    name: "Enterprise",
-    monthlyPrice: 23.99,
-    usageLimit: 10000,
-    description: "For scaling COD brands with bigger order volume.",
-    features: [
-      "All Premium Plan features",
-      "10,000 Orders/Month",
-      "Custom code assistance",
-      "Priority operations support",
-      "Faster review workflow",
-    ],
-    cta: "Select Enterprise",
-    variant: "featured",
-  },
-  {
-    id: EMPIRE_PLAN,
+    id: UNLIMITED_PLAN_ID,
     name: "Unlimited",
-    monthlyPrice: 55.99,
+    monthlyPrice: UNLIMITED_MONTHLY_PRICE,
+    annualPrice: UNLIMITED_ANNUAL_PRICE,
     usageLimit: null,
-    description: "For aggressive growth teams and heavy COD traffic.",
+    description: "Unlimited COD orders for growing stores.",
     features: [
-      "All Enterprise Plan features",
-      "Unlimited Orders/Month",
-      "A/B testing for upsells",
-      "Multiple form versions",
-      "24/7 priority chat support",
+      "Unlimited COD orders/month",
+      "Fast COD form on product pages",
+      "Orders created in Shopify",
+      "Basic order dashboard",
     ],
     cta: "Select Unlimited",
-    variant: "standard",
+    variant: "featured",
   },
 ] as const;
 
@@ -115,7 +103,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   try {
     billingState = await billing.check({
-      plans: [LAUNCH_PLAN, SCALE_PLAN, EMPIRE_PLAN],
+      plans: [...PAID_BILLING_PLANS],
       isTest: billingTestMode
     });
   } catch (error) {
@@ -137,12 +125,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const intent = String(formData.get("intent") || "");
 
   if (intent === "subscribe") {
-    const plan = String(formData.get("plan") || "") as
-      | typeof LAUNCH_PLAN
-      | typeof SCALE_PLAN
-      | typeof EMPIRE_PLAN;
+    const plan = String(formData.get("plan") || "") as PaidBillingPlan;
 
-    if (!plan) {
+    if (!PAID_BILLING_PLANS.includes(plan)) {
       return { status: "error" as const, message: "Choose a billing plan." };
     }
 
@@ -175,44 +160,37 @@ export default function BillingRoute() {
   const { billingState, summary, supportEmail } = useLoaderData<typeof loader>();
   const actionData = useActionData<ActionData>();
   const [interval, setInterval] = useState<"monthly" | "annual">("monthly");
-  const [discountCode, setDiscountCode] = useState("");
-  const [discountApplied, setDiscountApplied] = useState(false);
 
   const orderCount = summary.stats.submissions;
 
   const plans = useMemo(() => {
     return planCatalog.map((plan) => {
-      const annualMonthlyEquivalent = +(plan.monthlyPrice * 0.8).toFixed(2);
-      const appliedMonthlyEquivalent = discountApplied
-        ? +(plan.monthlyPrice * 0.9).toFixed(2)
-        : interval === "annual"
-          ? annualMonthlyEquivalent
-          : plan.monthlyPrice;
-
       return {
         ...plan,
         displayPrice:
           plan.monthlyPrice === 0
             ? "Free"
-            : `$${appliedMonthlyEquivalent.toFixed(2)} / month`,
+            : interval === "annual"
+              ? `$${plan.annualPrice.toFixed(0)} / year`
+              : `$${plan.monthlyPrice.toFixed(2)} / month`,
         discountBadge:
           plan.monthlyPrice === 0
             ? null
-            : discountApplied
-              ? "Code applied"
-              : interval === "annual"
-                ? "-20%"
-                : null,
+            : interval === "annual"
+              ? `Save ${ANNUAL_DISCOUNT_PERCENT}%`
+              : null,
+        billingPlan:
+          plan.id === UNLIMITED_PLAN_ID
+            ? interval === "annual"
+              ? UNLIMITED_ANNUAL_PLAN
+              : UNLIMITED_MONTHLY_PLAN
+            : null,
       };
     });
-  }, [discountApplied, interval]);
+  }, [interval]);
 
-  const currentPlanId = billingState.hasActivePayment ? SCALE_PLAN : "free";
+  const currentPlanId = billingState.hasActivePayment ? UNLIMITED_PLAN_ID : FREE_PLAN_ID;
   const currentPlan = plans.find((plan) => plan.id === currentPlanId) ?? plans[0];
-
-  function handleApplyDiscount() {
-    setDiscountApplied(discountCode.trim().toLowerCase() === "fast20");
-  }
 
   return (
     <s-page heading="Billing Plans">
@@ -223,7 +201,7 @@ export default function BillingRoute() {
               <p className="eyebrow">Billing</p>
               <h2 className="panelTitle">Choose your plan here</h2>
               <p className="panelText">
-                Fast Cod Pro plans below are set 20% lower than your reference pricing. Charges are processed securely through Shopify Billing.
+                Start free with 100 monthly COD orders. Upgrade to Unlimited when you need no order limit.
               </p>
             </div>
             <div className="buttonRow">
@@ -245,24 +223,9 @@ export default function BillingRoute() {
                 className={interval === "annual" ? "billingToggleActive" : ""}
                 onClick={() => setInterval("annual")}
               >
-                Annual <span className="billingToggleBadge">-20%</span>
+                Annual <span className="billingToggleBadge">-{ANNUAL_DISCOUNT_PERCENT}%</span>
               </button>
             </div>
-
-            <div className="billingDiscountRow">
-              <input
-                className="input"
-                value={discountCode}
-                onChange={(event) => setDiscountCode(event.currentTarget.value)}
-                placeholder="Enter discount code"
-              />
-              <button type="button" className="secondaryButton" onClick={handleApplyDiscount}>
-                Apply
-              </button>
-            </div>
-            {discountApplied ? (
-              <p className="successText">Discount code applied successfully.</p>
-            ) : null}
           </div>
 
           <div className="billingPlansGrid">
@@ -298,7 +261,7 @@ export default function BillingRoute() {
                   ) : (
                     <Form method="post">
                       <input type="hidden" name="intent" value="subscribe" />
-                      <input type="hidden" name="plan" value={plan.id} />
+                      <input type="hidden" name="plan" value={plan.billingPlan ?? ""} />
                       <button type="submit" className="primaryButton billingPlanButton">
                         {plan.cta}
                       </button>

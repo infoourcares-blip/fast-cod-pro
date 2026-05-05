@@ -75,7 +75,5 @@ Fast Cod Pro uses `read_products` to show product context, `write_app_proxy` for
 
 ## Suggested pricing copy
 
-- Forever Free for India: Start COD with 150 orders/month.
-- Premium for India: Advanced COD controls for growing merchants.
-- Enterprise: Higher order limits and priority operations support.
-- Unlimited: Built for heavy COD traffic and growth teams.
+- Free: Start COD with 100 orders/month.
+- Unlimited: $10/month for unlimited COD orders, or $102/year with 15% annual savings.

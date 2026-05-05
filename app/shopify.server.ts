@@ -7,7 +7,10 @@ import {
 } from "@shopify/shopify-app-react-router/server";
 import { PrismaSessionStorage } from "@shopify/shopify-app-session-storage-prisma";
 import prisma from "./db.server";
-import { EMPIRE_PLAN, LAUNCH_PLAN, SCALE_PLAN } from "./lib/billing-plans";
+import {
+  UNLIMITED_ANNUAL_PLAN,
+  UNLIMITED_MONTHLY_PLAN,
+} from "./lib/billing-plans";
 
 const REQUIRED_SCOPES = [
   "read_products",
@@ -35,30 +38,21 @@ const shopify = shopifyApp({
     expiringOfflineAccessTokens: true
   },
   billing: {
-    [LAUNCH_PLAN]: {
+    [UNLIMITED_MONTHLY_PLAN]: {
       lineItems: [
         {
-          amount: 7.99,
+          amount: 10,
           currencyCode: "USD",
           interval: BillingInterval.Every30Days
         }
       ]
     },
-    [SCALE_PLAN]: {
+    [UNLIMITED_ANNUAL_PLAN]: {
       lineItems: [
         {
-          amount: 23.99,
+          amount: 102,
           currencyCode: "USD",
-          interval: BillingInterval.Every30Days
-        }
-      ]
-    },
-    [EMPIRE_PLAN]: {
-      lineItems: [
-        {
-          amount: 55.99,
-          currencyCode: "USD",
-          interval: BillingInterval.Every30Days
+          interval: BillingInterval.Annual
         }
       ]
     }
