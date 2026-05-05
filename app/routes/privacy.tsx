@@ -2,11 +2,11 @@ export default function PrivacyRoute() {
   return (
     <main className="legalPage">
       <div className="legalShell">
-        <p className="legalEyebrow">Fast Cod Pro</p>
+        <p className="legalEyebrow">Fast COD Pro</p>
         <h1 className="legalTitle">Privacy Policy</h1>
         <p className="legalLead">
-          Fast Cod Pro helps Shopify merchants run COD order forms, submissions, automations,
-          and conversion workflows. This page describes what data we process, why we process it,
+          Fast COD Pro helps Shopify merchants run COD order forms, create Shopify Orders,
+          and manage COD submissions. This page describes what data we process, why we process it,
           and how merchants can request deletion or support.
         </p>
 
@@ -22,8 +22,8 @@ export default function PrivacyRoute() {
         <section className="legalSection">
           <h2>Why we process this data</h2>
           <p>
-            We use this data to display app settings, store COD submissions, run fraud and
-            automation rules, export orders, and support merchants using Fast Cod Pro.
+            We use this data to display app settings, create Shopify Orders, store COD
+            submissions, export order data, and support merchants using Fast COD Pro.
           </p>
         </section>
 
@@ -39,7 +39,7 @@ export default function PrivacyRoute() {
         <section className="legalSection">
           <h2>Data deletion and redaction</h2>
           <p>
-            Fast Cod Pro supports Shopify privacy webhooks for customer data requests, customer
+            Fast COD Pro supports Shopify privacy webhooks for customer data requests, customer
             redaction, and shop redaction. When a merchant uninstalls the app, merchant-owned app
             data is deleted.
           </p>

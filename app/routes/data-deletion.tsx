@@ -2,10 +2,10 @@ export default function DataDeletionRoute() {
   return (
     <main className="legalPage">
       <div className="legalShell">
-        <p className="legalEyebrow">Fast Cod Pro</p>
+        <p className="legalEyebrow">Fast COD Pro</p>
         <h1 className="legalTitle">Data Deletion</h1>
         <p className="legalLead">
-          Fast Cod Pro honors Shopify uninstall and privacy webhooks for merchant-owned shop data
+          Fast COD Pro honors Shopify uninstall and privacy webhooks for merchant-owned shop data
           and customer data requests.
         </p>
 

@@ -2,17 +2,17 @@ export default function TermsRoute() {
   return (
     <main className="legalPage">
       <div className="legalShell">
-        <p className="legalEyebrow">Fast Cod Pro</p>
+        <p className="legalEyebrow">Fast COD Pro</p>
         <h1 className="legalTitle">Terms of Service</h1>
         <p className="legalLead">
-          These terms govern the use of Fast Cod Pro by Shopify merchants who install the app and
-          use it to collect COD submissions, automate workflows, and manage conversion features.
+          These terms govern the use of Fast COD Pro by Shopify merchants who install the app and
+          use it to collect COD submissions, create Shopify Orders, and manage COD order workflows.
         </p>
 
         <section className="legalSection">
           <h2>Use of the app</h2>
           <p>
-            Merchants may use Fast Cod Pro only in connection with lawful business operations and
+            Merchants may use Fast COD Pro only in connection with lawful business operations and
             must ensure the app is configured in compliance with local consumer protection and
             privacy laws.
           </p>
@@ -22,7 +22,7 @@ export default function TermsRoute() {
           <h2>Merchant responsibilities</h2>
           <p>
             Merchants are responsible for verifying COD orders, managing shipment and fulfillment,
-            and reviewing fraud rules, automations, and messaging before using them in production.
+            and reviewing their storefront form settings before using them in production.
           </p>
         </section>
 

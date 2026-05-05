@@ -1,4 +1,4 @@
-# Fast Cod Pro Shopify Review Submission
+# Fast COD Pro Shopify Review Submission
 
 ## App setup
 
@@ -18,7 +18,7 @@
 
 ## Customer data handling
 
-Fast Cod Pro collects customer name, phone, email, address, city, notes, selected product, variant, quantity, and COD submission status when a customer submits the storefront COD form. This data is used only to help the merchant review, confirm, export, and follow up on COD requests.
+Fast COD Pro collects customer name, phone, email, address, city, notes, selected product, variant, quantity, and COD submission status when a customer submits the storefront COD form. This data is used only to help the merchant create Shopify Orders, review COD submissions, export order data, and provide support.
 
 The app stores merchant configuration, app sessions, and COD submissions in the production PostgreSQL database. Data is deleted or redacted through uninstall and privacy compliance webhook handling.
 
@@ -34,15 +34,15 @@ The app handles:
 
 ## Reviewer test flow
 
-1. Install Fast Cod Pro on the provided test store.
+1. Install Fast COD Pro on the provided test store.
 2. Open the embedded app in Shopify admin.
 3. Visit Dashboard, Form Designer, Orders Queue, Billing Plans, and Launch Readiness.
-4. Open the theme editor and enable the Fast Cod Pro theme app block on a product page template.
+4. Open the theme editor and enable the Fast COD Pro theme app block on a product page template.
 5. Visit a product page on the storefront.
 6. Open the COD popup and submit a test COD request.
-7. Confirm the customer sees the Fast Cod Pro thank-you page.
+7. Confirm the customer sees the Fast COD Pro thank-you page.
 8. Return to Shopify Admin > Orders and confirm the COD order appears with payment pending, customer details, delivery address, product, and COD tags.
-9. Return to Fast Cod Pro > Orders Queue and confirm the submission appears.
+9. Return to Fast COD Pro > Orders Queue and confirm the submission appears.
 
 ## Test customer data
 

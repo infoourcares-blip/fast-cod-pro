@@ -161,7 +161,7 @@ export default function BillingRoute() {
   const actionData = useActionData<ActionData>();
   const [interval, setInterval] = useState<"monthly" | "annual">("monthly");
 
-  const orderCount = summary.stats.submissions;
+  const orderCount = summary.stats.monthlySubmissions;
 
   const plans = useMemo(() => {
     return planCatalog.map((plan) => {

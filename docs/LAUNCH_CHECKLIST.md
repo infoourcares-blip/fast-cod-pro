@@ -1,4 +1,4 @@
-# Fast Cod Pro Launch Checklist
+# Fast COD Pro Launch Checklist
 
 ## Already completed in code
 
@@ -9,7 +9,7 @@
 - Merchant data cleanup on uninstall
 - Orders Queue search, filters, and CSV export
 - Theme app extension with COD launcher and popup
-- Billing plans screen
+- Billing plans screen with Free 100 orders/month and Unlimited billing
 - Production app domain configured at `https://app.fastcodpro.com`
 - PostgreSQL production database configured
 - Least-privilege scopes configured for current app features

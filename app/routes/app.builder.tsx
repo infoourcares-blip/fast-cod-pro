@@ -135,7 +135,7 @@ export default function BuilderRoute() {
           <div>
             <span className="simpleKicker">Step 1</span>
             <h1>Create your COD form</h1>
-            <p>Keep it simple. Set the form text, colors, and fields. Upsells, pixels, and fraud rules can come later.</p>
+            <p>Keep it simple. Set the form text, colors, and fields, then test one COD order from the product page.</p>
           </div>
           <a className="simplePrimary" href={themeEditorUrl} target="_top" rel="noreferrer">Enable on theme</a>
         </section>
@@ -285,7 +285,7 @@ export default function BuilderRoute() {
 
         <section className="simpleNext">
           <strong>Next after form works:</strong>
-          <span>Test storefront submit → confirm Shopify Orders → then add upsell, pixel, Google Sheets, and fraud protection one by one.</span>
+          <span>Test storefront submit → confirm Shopify Orders → then keep the form simple until App Store review is complete.</span>
           <Link to="/app/submissions" className="simpleSecondary">Open Orders Queue</Link>
         </section>
       </div>

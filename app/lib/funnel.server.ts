@@ -4,54 +4,28 @@ type SessionShop = {
   shop: string;
 };
 
-const defaultOffers = [
-  {
-    title: "Post-submit bundle upsell",
-    type: "bundle",
-    trigger: "After COD form submit",
-    upliftPercent: 11.8,
-    active: true
-  },
-  {
-    title: "Quantity break ladder",
-    type: "quantity-break",
-    trigger: "Product page high-intent visitors",
-    upliftPercent: 8.6,
-    active: true
-  }
-];
+const defaultOffers: Array<{
+  title: string;
+  type: string;
+  trigger: string;
+  upliftPercent: number | null;
+  active: boolean;
+}> = [];
 
-const defaultFraudRules = [
-  {
-    name: "High-value OTP gate",
-    ruleType: "order-value",
-    threshold: "Cart above $120",
-    action: "Require OTP",
-    active: true
-  },
-  {
-    name: "Risky postal code filter",
-    ruleType: "postal-code",
-    threshold: "44 blocked COD zones",
-    action: "Block COD",
-    active: true
-  }
-];
+const defaultFraudRules: Array<{
+  name: string;
+  ruleType: string;
+  threshold: string;
+  action: string;
+  active: boolean;
+}> = [];
 
-const defaultAutomations = [
-  {
-    name: "Push to fulfillment sheet",
-    destination: "Google Sheets",
-    event: "confirmed_cod_order",
-    active: true
-  },
-  {
-    name: "High-risk support alert",
-    destination: "WhatsApp Ops",
-    event: "high_risk_order",
-    active: true
-  }
-];
+const defaultAutomations: Array<{
+  name: string;
+  destination: string;
+  event: string;
+  active: boolean;
+}> = [];
 
 const defaultFormFields = [
   {
@@ -211,8 +185,27 @@ export async function getFunnelProfile(shop: string) {
   });
 }
 
+export function getCurrentMonthStart(now = new Date()) {
+  return new Date(now.getFullYear(), now.getMonth(), 1);
+}
+
+export async function getMonthlySubmissionCount(shop: string) {
+  return prisma.codSubmission.count({
+    where: {
+      shop,
+      createdAt: {
+        gte: getCurrentMonthStart()
+      }
+    }
+  });
+}
+
 export async function getFunnelSummary(shop: string) {
   const profile = await getFunnelProfile(shop);
+  const [totalSubmissions, monthlySubmissions] = await Promise.all([
+    prisma.codSubmission.count({ where: { shop } }),
+    getMonthlySubmissionCount(shop)
+  ]);
 
   return {
     profile,
@@ -225,7 +218,8 @@ export async function getFunnelSummary(shop: string) {
       activeAutomations: profile.automations.filter((item) => item.active).length,
       formFields: profile.formFields.length,
       activeFormFields: profile.formFields.filter((item) => item.active).length,
-      submissions: profile.submissions.length
+      submissions: totalSubmissions,
+      monthlySubmissions
     }
   };
 }

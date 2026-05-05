@@ -1,27 +1,25 @@
-# Fast Cod Pro App Store Listing
+# Fast COD Pro App Store Listing
 
 ## One-line value proposition
 
-Fast Cod Pro helps COD-first Shopify stores replace checkout friction with a fast COD launcher, popup form, Shopify order creation, order queue, exports, and fraud controls.
+Fast COD Pro helps COD-first Shopify stores replace checkout friction with a fast COD launcher, popup form, Shopify order creation, order queue, and CSV exports.
 
 ## Short description
 
-Launch a branded cash-on-delivery flow with popup COD forms, direct Shopify order creation, queue management, exports, and fraud rules.
+Launch a branded cash-on-delivery flow with popup COD forms, direct Shopify order creation, queue management, and exports.
 
 ## Full description
 
-Fast Cod Pro is built for merchants who want a cleaner cash-on-delivery buying experience than the standard checkout. Add a storefront COD launcher button, collect delivery details in a focused popup, create Shopify Orders with payment pending, and manage the full workflow from inside Shopify admin.
+Fast COD Pro is built for merchants who want a cleaner cash-on-delivery buying experience than the standard checkout. Add a storefront COD launcher button, collect delivery details in a focused popup, create Shopify Orders with payment pending, and manage the workflow from inside Shopify admin.
 
 ### Core features
 
 - COD launcher button and popup checkout experience
 - Direct Shopify Order creation with COD tags and payment pending status
-- Form Designer with customizable fields
+- COD form settings with configurable text, colors, and fields
 - Orders Queue with search, filters, CSV export, and status management
-- Fraud Prevention rules and merchant automation controls
-- Sales Booster / offer management
 - Embedded admin dashboard with onboarding and launch-readiness sections
-- Billing plans ready for Shopify Billing API integration
+- Billing plans through Shopify Billing: Free 100 orders/month and Unlimited
 
 ### Best-fit merchants
 
@@ -52,14 +50,14 @@ Fast Cod Pro is built for merchants who want a cleaner cash-on-delivery buying e
 
 ## Shopify review notes
 
-Fast Cod Pro uses `read_products` to show product context, `write_app_proxy` for storefront COD form proxy routes, and `write_orders` to create Shopify Orders from COD submissions. Customer data collected by the COD form is used to create the order, show it in the app queue, support export, and honor deletion/redaction requests.
+Fast COD Pro uses `read_products` to show product context, `write_app_proxy` for storefront COD form proxy routes, and `write_orders` to create Shopify Orders from COD submissions. Customer data collected by the COD form is used to create the order, show it in the app queue, support export, and honor deletion/redaction requests.
 
 ## Reviewer Test Instructions
 
-1. Install Fast Cod Pro on the provided development store.
+1. Install Fast COD Pro on the provided development store.
 2. Open the embedded app from Shopify admin and confirm the dashboard loads.
-3. Open Form Designer and verify the COD form fields are configurable.
-4. Open the theme editor, enable the Fast Cod Pro theme app block on a product template, and save.
+3. Open COD Form and verify the COD form text, colors, and fields are configurable.
+4. Open the theme editor, enable the Fast COD Pro theme app block on a product template, and save.
 5. Visit a product page, open the COD popup, and submit a test COD request with sample customer details.
 6. Confirm the thank-you page opens after submission.
 7. Return to Shopify Admin > Orders and verify the COD order appears with payment pending status, customer details, delivery address, product, and COD tags.
@@ -68,10 +66,10 @@ Fast Cod Pro uses `read_products` to show product context, `write_app_proxy` for
 ## Suggested screenshots
 
 1. Dashboard overview
-2. Form Designer
+2. COD Form settings
 3. Storefront COD launcher and popup
 4. Orders Queue with search/filter/export
-5. Fraud Prevention and Automation pages
+5. Billing plans
 
 ## Suggested pricing copy
 

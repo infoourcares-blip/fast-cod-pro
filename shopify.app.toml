@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "15b7f4f0a93cc197d17bf7f4744a399e"
-name = "Fast Cod Pro"
+name = "Fast COD Pro"
 application_url = "https://app.fastcodpro.com"
 embedded = true
 handle = "fast-cod-pro"

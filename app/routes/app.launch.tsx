@@ -32,7 +32,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     {
       title: "Merchant data cleanup on uninstall",
       status: "done",
-      detail: "Sessions and Fast Cod Pro merchant data are purged when the app is removed.",
+      detail: "Sessions and Fast COD Pro merchant data are purged when the app is removed.",
     },
     {
       title: "COD storefront flow tested",
@@ -43,14 +43,14 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     },
     {
       title: "App listing assets prepared",
-      status: "done",
-      detail: "Launch docs and listing copy templates are included in the project docs folder.",
+      status: "pending",
+      detail: "Prepare final App Store screenshots, app icon, demo video, and listing copy before submitting.",
     },
     {
       title: "Protected customer data approval",
-      status: orderWarning ? "blocked" : "pending",
+      status: "pending",
       detail: orderWarning
-        ? "The latest Shopify order creation test returned an error. Fix it before App Store submission."
+        ? "Order creation works but the latest test still had a warning. Review it, then apply for protected customer data access."
         : "Apply for protected customer data access because the app collects name, phone, email, and delivery address.",
     },
     {
@@ -82,7 +82,7 @@ export default function LaunchRoute() {
         <section className="launchHero">
           <div>
             <p className="eyebrow">App Store readiness</p>
-            <h2 className="launchHeroTitle">Fast Cod Pro launch checklist</h2>
+            <h2 className="launchHeroTitle">Fast COD Pro launch checklist</h2>
             <p className="sectionIntro">
               This page tracks what is already complete inside the app, what still needs merchant
               QA, and what Shopify approvals are still blocking full production release.

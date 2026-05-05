@@ -1,17 +1,18 @@
-# Fast Cod Pro
+# Fast COD Pro
 
-Fast Cod Pro is a real Shopify embedded app starter built on Shopify's official React Router template and customized for COD-heavy merchants.
+Fast COD Pro is a real Shopify embedded app built on Shopify's official React Router template and customized for COD-heavy merchants.
 
 It now includes:
 
 - Shopify embedded app authentication and App Bridge
 - Prisma-backed session storage
-- A custom Fast Cod Pro merchant dashboard
-- Dedicated pages for offers, fraud controls, and automations
+- A custom Fast COD Pro merchant dashboard
+- Product-page COD form settings
 - Public legal pages for privacy, terms, support, and data deletion
 - Shopify privacy webhook handlers and uninstall cleanup
 - Orders Queue with search, filters, export, and status updates
-- Shopify App Store-ready positioning and product structure
+- Shopify Orders creation for COD submissions
+- Simple Shopify Billing plans: Free and Unlimited
 
 ## Stack
 
@@ -51,19 +52,20 @@ npm run dev
 
 When you run `npm run dev`, Shopify CLI will connect the app, create a tunnel, and open the embedded install flow.
 
-## Fast Cod Pro product direction
+## Fast COD Pro product direction
 
-Fast Cod Pro is positioned as an advanced revenue app for COD-first stores:
+Fast COD Pro is positioned as a simple conversion app for COD-first stores:
 
-- Custom COD forms and funnel controls
-- One-click upsells and bundles
-- OTP and risk verification logic
-- Campaign attribution and order automations
-- Merchant analytics for conversion and AOV growth
+- Product-page COD launcher and popup form
+- Customer name, phone, address, city, and notes capture
+- Direct Shopify Order creation with payment pending and COD tags
+- Orders Queue for COD submission tracking and CSV export
+- Free plan with 100 monthly COD orders
+- Unlimited plan for stores that need no order limit
 
 ## Recommended next product steps
 
-1. Get Shopify approval for DraftOrder access and customer data submitted through COD forms.
+1. Get Shopify approval for protected customer data submitted through COD forms.
 2. Keep production URLs pointed at `https://app.fastcodpro.com`.
 3. Rotate any exposed Shopify app secret before final submission.
 4. Run end-to-end QA on storefront themes and mobile devices.

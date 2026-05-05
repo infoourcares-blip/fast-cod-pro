@@ -2,7 +2,7 @@ export default function SupportRoute() {
   return (
     <main className="legalPage">
       <div className="legalShell">
-        <p className="legalEyebrow">Fast Cod Pro</p>
+        <p className="legalEyebrow">Fast COD Pro</p>
         <h1 className="legalTitle">Support</h1>
         <p className="legalLead">
           Need help with onboarding, storefront setup, COD form behavior, billing, or exports? Use

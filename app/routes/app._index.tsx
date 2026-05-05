@@ -1,6 +1,5 @@
 import type { LoaderFunctionArgs } from "react-router";
 import { Link, useLoaderData } from "react-router";
-import { useState } from "react";
 import { getFunnelSummary } from "../lib/funnel.server";
 import { authenticate } from "../shopify.server";
 
@@ -95,27 +94,21 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export default function DashboardRoute() {
   const { shop, recentProducts, summary } = useLoaderData<typeof loader>();
-  const [copiedInvite, setCopiedInvite] = useState(false);
   const latestSubmission = summary.profile.submissions[0] ?? null;
-  const submissionCount = summary.stats.submissions;
-  const formOpens = submissionCount * 3 + 145;
-  const orderCount = submissionCount;
-  const revenueValue = submissionCount * 89;
-  const conversionRate = formOpens ? ((orderCount / formOpens) * 100).toFixed(1) : "0.0";
-  const inviteLink = `https://fastcod.pro/invite/${summary.profile.brandName}`;
+  const totalOrders = summary.stats.submissions;
+  const monthlyOrders = summary.stats.monthlySubmissions;
   const shopHandle = shop?.myshopifyDomain?.replace(".myshopify.com", "") ?? "";
   const themeEditorUrl = shopHandle
     ? `https://admin.shopify.com/store/${shopHandle}/themes/current/editor?context=apps`
     : null;
   const tutorialUrl = summary.profile.tutorialUrl;
   const supportEmail = summary.profile.supportEmail;
-  const supportWhatsapp = summary.profile.supportWhatsapp?.replace(/\D/g, "") ?? "";
 
   const setupCompleted = [
     summary.stats.activeFormFields > 0,
     Boolean(summary.profile.brandName),
-    summary.stats.activeAutomations > 0,
-    summary.stats.activeFraudRules > 0,
+    totalOrders > 0,
+    recentProducts.length > 0,
   ].filter(Boolean).length;
   let draftOrderWarning: string | null = null;
 
@@ -128,26 +121,16 @@ export default function DashboardRoute() {
     }
   }
 
-  async function handleCopyInvite() {
-    try {
-      await navigator.clipboard.writeText(inviteLink);
-      setCopiedInvite(true);
-      window.setTimeout(() => setCopiedInvite(false), 2000);
-    } catch {
-      setCopiedInvite(false);
-    }
-  }
-
   return (
-    <s-page heading="Fast Cod Pro Dashboard">
+    <s-page heading="Fast COD Pro Dashboard">
       <div className="proShell">
         <section className="proHero">
           <div className="proHeroCopy">
             <span className="proEyebrow">COD conversion workspace</span>
             <h1>Boost Your Conversion</h1>
-            <p>Increase COD orders with a fast checkout form, smart offers, real-time tracking, and fraud controls built for mobile shoppers.</p>
+            <p>Create COD orders directly in Shopify with a fast mobile form on product pages.</p>
             <div className="proHeroActions">
-              <Link className="proButton" to="/app/builder">Create Your First COD Form</Link>
+              <Link className="proButton" to="/app/builder">Customize COD Form</Link>
               {themeEditorUrl ? (
                 <a className="proButton proButtonSecondary" href={themeEditorUrl} target="_top" rel="noreferrer">
                   Open Theme Editor
@@ -156,14 +139,14 @@ export default function DashboardRoute() {
             </div>
             <div className="proBadgeGrid">
               {[
-                "Custom form & button",
-                "Shipping rates",
-                "Quantity offers",
-                "Upsells & downsells",
-                "WhatsApp OTP",
-                "Multiple pixels",
-                "Google Sheets",
-                "Abandoned checkouts",
+                "Product page COD form",
+                "Shopify order creation",
+                "Customer name and phone",
+                "Delivery address capture",
+                "Orders queue",
+                "CSV export",
+                "Free plan: 100 orders",
+                "Unlimited plan: $10/month",
               ].map((badge) => (
                 <span className="proFeatureBadge" key={badge}>{badge}</span>
               ))}
@@ -175,7 +158,7 @@ export default function DashboardRoute() {
               <div className="proPhoneCard">
                 <strong>Fast COD Checkout</strong>
                 <span>Name</span>
-                <span>Phone with OTP</span>
+                <span>Phone</span>
                 <span>Address</span>
                 <button type="button">Place COD Order</button>
               </div>
@@ -198,24 +181,24 @@ export default function DashboardRoute() {
 
         <section className="proStatsGrid">
           <article className="proStatCard">
-            <span>Orders</span>
-            <strong>{orderCount}</strong>
-            <small>Last 7 days</small>
+            <span>Total COD orders</span>
+            <strong>{totalOrders}</strong>
+            <small>Created through Fast COD Pro</small>
           </article>
           <article className="proStatCard">
-            <span>Conversion rate</span>
-            <strong>{conversionRate}%</strong>
-            <small>{formOpens} form opens</small>
+            <span>This month</span>
+            <strong>{monthlyOrders}</strong>
+            <small>Free plan includes 100 orders</small>
           </article>
           <article className="proStatCard">
-            <span>Revenue</span>
-            <strong>{summary.profile.defaultCurrency} {revenueValue.toFixed(2)}</strong>
-            <small>COD attributed</small>
+            <span>Active fields</span>
+            <strong>{summary.stats.activeFormFields}</strong>
+            <small>{summary.stats.formFields} configured</small>
           </article>
           <article className="proStatCard">
-            <span>Fraud rules</span>
-            <strong>{summary.stats.activeFraudRules}</strong>
-            <small>{summary.stats.fraudRules} configured</small>
+            <span>Products found</span>
+            <strong>{recentProducts.length}</strong>
+            <small>Latest Shopify products</small>
           </article>
         </section>
 
@@ -224,16 +207,20 @@ export default function DashboardRoute() {
             <div className="proCardHeader">
               <div>
                 <h2>One-click launch path</h2>
-                <p>Everything a new merchant needs to activate the fastest COD form.</p>
+                <p>Only the live, working setup steps are shown here.</p>
               </div>
               <span className="proPill">{setupCompleted} / 4 complete</span>
             </div>
             <div className="proProgress"><span style={{ width: `${(setupCompleted / 4) * 100}%` }} /></div>
             <div className="proChecklist">
-              <Link className="proCheckItem proCheckDone" to="/app/builder">Enable Fast COD Form</Link>
+              <Link className={summary.stats.activeFormFields > 0 ? "proCheckItem proCheckDone" : "proCheckItem"} to="/app/builder">Customize COD form fields</Link>
               <Link className={summary.stats.activeFormFields > 0 ? "proCheckItem proCheckDone" : "proCheckItem"} to="/app/builder">Customize fields and CTA</Link>
-              <Link className={summary.stats.activeOffers > 0 ? "proCheckItem proCheckDone" : "proCheckItem"} to="/app/offers">Create quantity or upsell offer</Link>
-              <Link className={summary.stats.activeFraudRules > 0 ? "proCheckItem proCheckDone" : "proCheckItem"} to="/app/fraud">Turn on fraud protection</Link>
+              {themeEditorUrl ? (
+                <a className="proCheckItem" href={themeEditorUrl} target="_top" rel="noreferrer">Enable theme app block</a>
+              ) : (
+                <span className="proCheckItem">Enable theme app block</span>
+              )}
+              <Link className={totalOrders > 0 ? "proCheckItem proCheckDone" : "proCheckItem"} to="/app/submissions">Submit one test COD order</Link>
             </div>
           </section>
 
@@ -241,30 +228,30 @@ export default function DashboardRoute() {
             <div className="proCardHeader">
               <div>
                 <h2>Storefront status</h2>
-                <p>Theme embed, order creation, and tracking readiness.</p>
+                <p>Theme embed, app proxy, and Shopify order creation readiness.</p>
               </div>
             </div>
             <div className="proHealthList">
               <div><span className="proDot" />Theme App Embed <strong>Ready</strong></div>
               <div><span className="proDot" />Shopify Orders API <strong>Connected</strong></div>
               <div><span className="proDot" />App proxy form <strong>Active</strong></div>
-              <div><span className="proDotMuted" />Google Sheets <strong>Connect in Integrations</strong></div>
+              <div><span className="proDot" />Free order limit <strong>100/month</strong></div>
             </div>
           </section>
         </div>
 
         <div className="proGridThree">
           <Link className="proActionCard" to="/app/builder">
-            <strong>Form Builder</strong>
-            <span>Drag fields, preview mobile checkout, adjust CTA and colors.</span>
+            <strong>COD Form</strong>
+            <span>Edit title, fields, button label, colors, and mobile preview.</span>
           </Link>
-          <Link className="proActionCard" to="/app/offers">
-            <strong>Upsell / Downsell</strong>
-            <span>Add discount, timer, and quantity offers to improve AOV.</span>
+          <Link className="proActionCard" to="/app/submissions">
+            <strong>Orders Queue</strong>
+            <span>Review captured COD submissions and export customer details.</span>
           </Link>
-          <Link className="proActionCard" to="/app/fraud">
-            <strong>Fraud Protection</strong>
-            <span>Block repeat IPs, phones, emails, and risky quantities.</span>
+          <Link className="proActionCard" to="/app/billing">
+            <strong>Billing Plans</strong>
+            <span>Free includes 100 orders. Unlimited removes the order limit.</span>
           </Link>
         </div>
 
@@ -273,7 +260,7 @@ export default function DashboardRoute() {
             <div className="proCardHeader">
               <div>
                 <h2>Recent Shopify products</h2>
-                <p>Use these products in COD offers and form preview.</p>
+                <p>These are the latest products available for the storefront COD form.</p>
               </div>
             </div>
             <div className="proTable">
@@ -304,22 +291,13 @@ export default function DashboardRoute() {
           <section className="proCard">
             <div className="proCardHeader">
               <div>
-                <h2>Share and support</h2>
-                <p>Quick links for onboarding, tutorial, and merchant support.</p>
+                <h2>Support</h2>
+                <p>Quick links for merchant help and setup review.</p>
               </div>
-            </div>
-            <div className="proShareBox">
-              <span>{inviteLink}</span>
-              <button type="button" className="proButton proButtonSecondary" onClick={handleCopyInvite}>
-                {copiedInvite ? "Copied" : "Copy"}
-              </button>
             </div>
             <div className="proButtonRow">
               <a className="proButton proButtonSecondary" href={tutorialUrl} target="_blank" rel="noreferrer">Watch tutorial</a>
               <a className="proButton proButtonSecondary" href={`mailto:${supportEmail}?subject=Fast%20COD%20Pro%20Support`}>Contact support</a>
-              {supportWhatsapp ? (
-                <a className="proButton proButtonSecondary" href={`https://wa.me/${supportWhatsapp}`} target="_blank" rel="noreferrer">WhatsApp</a>
-              ) : null}
             </div>
           </section>
         </div>
@@ -327,25 +305,25 @@ export default function DashboardRoute() {
         <section className="proCard">
           <div className="proCardHeader">
             <div>
-              <h2>Backend-ready modules</h2>
-              <p>Current database-backed state that powers the premium app workflow.</p>
+              <h2>Live backend status</h2>
+              <p>Only currently working production modules are listed here.</p>
             </div>
           </div>
           <div className="proGridThree">
-            <article className="proMiniCard">
-              <strong>{summary.stats.offers}</strong>
-              <span>Offers</span>
-              <small>{summary.stats.activeOffers} active</small>
-            </article>
             <article className="proMiniCard">
               <strong>{summary.stats.formFields}</strong>
               <span>Form fields</span>
               <small>{summary.stats.activeFormFields} active</small>
             </article>
             <article className="proMiniCard">
-              <strong>{summary.stats.automations}</strong>
-              <span>Automations</span>
-              <small>{summary.stats.activeAutomations} active</small>
+              <strong>{monthlyOrders}</strong>
+              <span>Orders this month</span>
+              <small>Free limit: 100</small>
+            </article>
+            <article className="proMiniCard">
+              <strong>{recentProducts.length}</strong>
+              <span>Products loaded</span>
+              <small>From Shopify Admin API</small>
             </article>
           </div>
         </section>

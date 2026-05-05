@@ -21,10 +21,9 @@ export default function App() {
   return (
     <div className={styles.index}>
       <div className={styles.content}>
-        <h1 className={styles.heading}>Fast Cod Pro for high-converting COD stores</h1>
+        <h1 className={styles.heading}>Fast COD Pro for high-converting COD stores</h1>
         <p className={styles.text}>
-          Launch an embedded Shopify app for COD forms, upsells, fraud checks,
-          and automations that helps merchants increase conversion and AOV.
+          Launch a fast cash-on-delivery form that creates Shopify Orders from product pages.
         </p>
         {showForm && (
           <Form className={styles.form} method="post" action="/auth/login">
@@ -44,12 +43,12 @@ export default function App() {
             embedded or popup flows that reduce checkout friction.
           </li>
           <li>
-            <strong>Revenue offers</strong>. Add post-form upsells, bundles,
-            and quantity deals to lift average order value.
+            <strong>Shopify Orders</strong>. Create payment-pending COD orders
+            with customer and delivery details.
           </li>
           <li>
-            <strong>Fraud control</strong>. Use OTP and risk rules to reduce
-            fake COD orders before fulfillment.
+            <strong>Orders Queue</strong>. Review COD submissions and export
+            operational data for fulfillment.
           </li>
         </ul>
       </div>

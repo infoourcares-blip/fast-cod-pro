@@ -1,7 +1,8 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import type { Session as StoredShopifySession } from "@prisma/client";
 import prisma from "../db.server";
-import { getFunnelProfile } from "../lib/funnel.server";
+import { getFunnelProfile, getMonthlySubmissionCount } from "../lib/funnel.server";
+import { UNLIMITED_ANNUAL_PLAN, UNLIMITED_MONTHLY_PLAN } from "../lib/billing-plans";
 import { authenticate, unauthenticated } from "../shopify.server";
 
 type GraphqlUserError = {
@@ -32,6 +33,7 @@ type SubmissionContext = {
 };
 
 const SUBMIT_BUILD_ID = "cod-submit-2026-04-29-1";
+const FREE_ORDER_LIMIT = 100;
 const OFFLINE_TOKEN_REFRESH_WINDOW_MS = 5 * 60 * 1000;
 const TOKEN_EXCHANGE_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:token-exchange";
 const OFFLINE_TOKEN_TYPE = "urn:shopify:params:oauth:token-type:offline-access-token";
@@ -42,6 +44,17 @@ type OfflineTokenResponse = {
   expires_in?: number;
   refresh_token?: string;
   refresh_token_expires_in?: number;
+};
+
+type CurrentAppInstallationPayload = {
+  data?: {
+    currentAppInstallation?: {
+      activeSubscriptions?: Array<{
+        name?: string | null;
+        status?: string | null;
+      }> | null;
+    } | null;
+  };
 };
 
 function formatGraphqlErrors(
@@ -69,6 +82,37 @@ function formatGraphqlErrors(
     .filter(Boolean);
 
   return [...formattedUserErrors, ...formattedTopLevelErrors].join(" | ");
+}
+
+async function hasActiveUnlimitedPlan(admin: AdminClient) {
+  try {
+    const response = await admin.graphql(
+      `#graphql
+        query FastCodProCurrentBillingPlan {
+          currentAppInstallation {
+            activeSubscriptions {
+              name
+              status
+            }
+          }
+        }`
+    );
+    const payload = (await response.json()) as CurrentAppInstallationPayload;
+    const activeSubscriptions =
+      payload.data?.currentAppInstallation?.activeSubscriptions ?? [];
+
+    return activeSubscriptions.some((subscription) => {
+      const isUnlimited =
+        subscription.name === UNLIMITED_MONTHLY_PLAN ||
+        subscription.name === UNLIMITED_ANNUAL_PLAN;
+      return isUnlimited && subscription.status === "ACTIVE";
+    });
+  } catch (error) {
+    console.error("Fast COD Pro billing status check failed", {
+      error: error instanceof Error ? error.message : String(error)
+    });
+    return false;
+  }
 }
 
 function normalizeShopDomain(value: FormDataEntryValue | string | null) {
@@ -898,6 +942,23 @@ async function handleSubmission(
           orderCreated: false
         },
         422
+      );
+    }
+
+    const [monthlySubmissionCount, hasUnlimitedPlan] = await Promise.all([
+      getMonthlySubmissionCount(session.shop),
+      hasActiveUnlimitedPlan(admin)
+    ]);
+
+    if (!hasUnlimitedPlan && monthlySubmissionCount >= FREE_ORDER_LIMIT) {
+      return storefrontResponse(
+        request,
+        {
+          error: `Free plan limit reached. Free includes ${FREE_ORDER_LIMIT} COD orders per month. Upgrade to Unlimited to keep receiving COD orders.`,
+          orderCreated: false,
+          limitReached: true
+        },
+        402
       );
     }
 

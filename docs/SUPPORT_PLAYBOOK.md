@@ -1,4 +1,4 @@
-# Fast Cod Pro Support Playbook
+# Fast COD Pro Support Playbook
 
 ## Ask merchants for
 
