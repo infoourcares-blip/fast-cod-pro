@@ -1,6 +1,7 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { Form, Link, useActionData, useLoaderData, useNavigation } from "react-router";
-import { useState } from "react";
+import { Form, Link, useActionData, useLoaderData, useNavigation, useSubmit } from "react-router";
+import type { DragEvent } from "react";
+import { useEffect, useState } from "react";
 import prisma from "../db.server";
 import { getFunnelProfile } from "../lib/funnel.server";
 import { authenticate } from "../shopify.server";
@@ -167,6 +168,42 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     return { status: "success" as const, message: "Field added." };
   }
 
+  if (intent === "reorder-fields") {
+    const fieldIds = String(formData.get("fieldIds") || "")
+      .split(",")
+      .map((value) => Number(value))
+      .filter(Boolean);
+
+    if (!fieldIds.length) {
+      return { status: "error" as const, message: "No fields selected for reorder." };
+    }
+
+    const ownedFields = await prisma.codFormField.findMany({
+      where: {
+        funnelProfileId: profile.id,
+        id: { in: fieldIds }
+      },
+      select: { id: true }
+    });
+    const ownedFieldIds = new Set(ownedFields.map((field) => field.id));
+    const validFieldIds = fieldIds.filter((id) => ownedFieldIds.has(id));
+
+    if (validFieldIds.length !== fieldIds.length) {
+      return { status: "error" as const, message: "Some fields could not be reordered." };
+    }
+
+    await prisma.$transaction(
+      validFieldIds.map((id, index) =>
+        prisma.codFormField.update({
+          where: { id },
+          data: { sortOrder: index + 1 }
+        })
+      )
+    );
+
+    return { status: "success" as const, message: "Field order saved." };
+  }
+
   const id = Number(formData.get("id"));
   if (!id) return { status: "error" as const, message: "Missing field id." };
 
@@ -188,11 +225,10 @@ export default function BuilderRoute() {
   const { profile, fields, themeEditorUrl } = useLoaderData<typeof loader>();
   const actionData = useActionData<ActionData>();
   const navigation = useNavigation();
+  const submit = useSubmit();
   const isSavingForm =
     navigation.state !== "idle" &&
     navigation.formData?.get("intent") === "save-form-settings";
-  const activeFields = fields.filter((field) => field.active);
-  const previewFields = activeFields.length ? activeFields : fields;
   const previewAmount = "INR 1.00";
   const [formSettings, setFormSettings] = useState({
     formTitle: profile.formTitle,
@@ -216,10 +252,18 @@ export default function BuilderRoute() {
     placeholder: "",
     required: false,
   });
+  const [orderedFields, setOrderedFields] = useState(fields);
+  const [draggedFieldId, setDraggedFieldId] = useState<number | null>(null);
   const isAddingField =
     navigation.state !== "idle" &&
     navigation.formData?.get("intent") === "create-field";
   const generatedFieldKey = toFieldKey(newField.label);
+  const activeFields = orderedFields.filter((field) => field.active);
+  const previewFields = activeFields.length ? activeFields : orderedFields;
+
+  useEffect(() => {
+    setOrderedFields(fields);
+  }, [fields]);
 
   const updateSetting = (key: keyof typeof formSettings, value: string | boolean) => {
     setFormSettings((current) => ({ ...current, [key]: value }));
@@ -227,6 +271,33 @@ export default function BuilderRoute() {
 
   const updateNewField = (key: keyof typeof newField, value: string | boolean) => {
     setNewField((current) => ({ ...current, [key]: value }));
+  };
+
+  const saveFieldOrder = (nextFields: typeof fields) => {
+    const reorderData = new FormData();
+    reorderData.set("intent", "reorder-fields");
+    reorderData.set("fieldIds", nextFields.map((field) => field.id).join(","));
+    submit(reorderData, { method: "post", replace: true });
+  };
+
+  const moveDraggedField = (targetFieldId: number) => {
+    if (!draggedFieldId || draggedFieldId === targetFieldId) return;
+
+    const draggedIndex = orderedFields.findIndex((field) => field.id === draggedFieldId);
+    const targetIndex = orderedFields.findIndex((field) => field.id === targetFieldId);
+    if (draggedIndex < 0 || targetIndex < 0) return;
+
+    const nextFields = [...orderedFields];
+    const [draggedField] = nextFields.splice(draggedIndex, 1);
+    nextFields.splice(targetIndex, 0, draggedField);
+    setOrderedFields(nextFields);
+    saveFieldOrder(nextFields);
+  };
+
+  const startFieldDrag = (event: DragEvent<HTMLElement>, fieldId: number) => {
+    setDraggedFieldId(fieldId);
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", String(fieldId));
   };
 
   const getFieldIcon = (fieldKey: string) => {
@@ -568,21 +639,44 @@ export default function BuilderRoute() {
 
           <div className="simpleFieldListHeader">
             <strong>Current form fields</strong>
-            <span>{fields.length} total · {activeFields.length} visible</span>
+            <span>{orderedFields.length} total · {activeFields.length} visible</span>
           </div>
 
           <div className="simpleFieldList">
-            {fields.map((field) => (
-              <div className="simpleFieldRow" key={field.id}>
-                <div>
-                  <strong>{field.label}</strong>
-                  <span>
-                    {fieldTypeOptions.find((option) => option.value === field.fieldType)?.label || field.fieldType}
-                    {" · "}
-                    {field.required ? "Required" : "Optional"}
-                    {" · "}
-                    {field.active ? "Visible on form" : "Hidden from form"}
-                  </span>
+            {orderedFields.map((field) => (
+              <div
+                className={`simpleFieldRow${draggedFieldId === field.id ? " simpleFieldRowDragging" : ""}`}
+                key={field.id}
+                onDragOver={(event) => {
+                  event.preventDefault();
+                  event.dataTransfer.dropEffect = "move";
+                }}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  moveDraggedField(field.id);
+                }}
+                onDragEnd={() => setDraggedFieldId(null)}
+              >
+                <div className="simpleFieldInfo">
+                  <button
+                    type="button"
+                    className="simpleDragHandle"
+                    draggable
+                    title="Drag to reorder"
+                    onDragStart={(event) => startFieldDrag(event, field.id)}
+                  >
+                    ↕
+                  </button>
+                  <div>
+                    <strong>{field.label}</strong>
+                    <span>
+                      {fieldTypeOptions.find((option) => option.value === field.fieldType)?.label || field.fieldType}
+                      {" · "}
+                      {field.required ? "Required" : "Optional"}
+                      {" · "}
+                      {field.active ? "Visible on form" : "Hidden from form"}
+                    </span>
+                  </div>
                 </div>
                 <div className="simpleRowActions">
                   <Form method="post">
