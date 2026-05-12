@@ -653,6 +653,7 @@
 .simpleFieldList {
   display: grid;
   gap: 10px;
+  user-select: none;
 }
 
 .simpleFieldRow {
@@ -664,7 +665,8 @@
   border: 1px solid #e2e8f0;
   border-radius: 14px;
   background: #f8fafc;
-  transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, opacity 160ms ease, transform 160ms ease;
+  will-change: transform, opacity;
+  transition: background 180ms ease, border-color 180ms ease, box-shadow 180ms ease, opacity 180ms ease, transform 180ms ease;
 }
 
 .simpleFieldRow:hover {
@@ -674,10 +676,11 @@
 }
 
 .simpleFieldRowDragging {
-  opacity: 0.56;
-  transform: scale(0.995);
+  opacity: 0.72;
+  transform: scale(0.985);
   border-color: #93c5fd;
   background: #eff6ff;
+  box-shadow: 0 16px 34px rgba(37, 99, 235, 0.12);
 }
 
 .simpleFieldInfo {
@@ -702,10 +705,20 @@
   font-weight: 900;
   cursor: grab;
   box-shadow: 0 6px 14px rgba(15, 51, 74, 0.05);
+  transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+  touch-action: none;
+}
+
+.simpleDragHandle:hover {
+  transform: translateY(-1px);
+  border-color: #93c5fd;
+  background: #eff6ff;
+  box-shadow: 0 10px 20px rgba(15, 51, 74, 0.08);
 }
 
 .simpleDragHandle:active {
   cursor: grabbing;
+  transform: scale(0.96);
 }
 
 .simpleFieldRow strong,

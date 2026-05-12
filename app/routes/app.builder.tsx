@@ -1,7 +1,7 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { Form, Link, useActionData, useLoaderData, useNavigation, useSubmit } from "react-router";
 import type { DragEvent } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import prisma from "../db.server";
 import { getFunnelProfile } from "../lib/funnel.server";
 import { authenticate } from "../shopify.server";
@@ -254,6 +254,8 @@ export default function BuilderRoute() {
   });
   const [orderedFields, setOrderedFields] = useState(fields);
   const [draggedFieldId, setDraggedFieldId] = useState<number | null>(null);
+  const latestOrderRef = useRef(fields);
+  const hasPendingOrderSaveRef = useRef(false);
   const isAddingField =
     navigation.state !== "idle" &&
     navigation.formData?.get("intent") === "create-field";
@@ -263,6 +265,7 @@ export default function BuilderRoute() {
 
   useEffect(() => {
     setOrderedFields(fields);
+    latestOrderRef.current = fields;
   }, [fields]);
 
   const updateSetting = (key: keyof typeof formSettings, value: string | boolean) => {
@@ -273,7 +276,9 @@ export default function BuilderRoute() {
     setNewField((current) => ({ ...current, [key]: value }));
   };
 
-  const saveFieldOrder = (nextFields: typeof fields) => {
+  const saveFieldOrder = (nextFields = latestOrderRef.current) => {
+    if (!hasPendingOrderSaveRef.current) return;
+    hasPendingOrderSaveRef.current = false;
     const reorderData = new FormData();
     reorderData.set("intent", "reorder-fields");
     reorderData.set("fieldIds", nextFields.map((field) => field.id).join(","));
@@ -283,21 +288,30 @@ export default function BuilderRoute() {
   const moveDraggedField = (targetFieldId: number) => {
     if (!draggedFieldId || draggedFieldId === targetFieldId) return;
 
-    const draggedIndex = orderedFields.findIndex((field) => field.id === draggedFieldId);
-    const targetIndex = orderedFields.findIndex((field) => field.id === targetFieldId);
+    const currentFields = latestOrderRef.current;
+    const draggedIndex = currentFields.findIndex((field) => field.id === draggedFieldId);
+    const targetIndex = currentFields.findIndex((field) => field.id === targetFieldId);
     if (draggedIndex < 0 || targetIndex < 0) return;
 
-    const nextFields = [...orderedFields];
+    const nextFields = [...currentFields];
     const [draggedField] = nextFields.splice(draggedIndex, 1);
     nextFields.splice(targetIndex, 0, draggedField);
+    latestOrderRef.current = nextFields;
+    hasPendingOrderSaveRef.current = true;
     setOrderedFields(nextFields);
-    saveFieldOrder(nextFields);
   };
 
   const startFieldDrag = (event: DragEvent<HTMLElement>, fieldId: number) => {
     setDraggedFieldId(fieldId);
+    latestOrderRef.current = orderedFields;
+    hasPendingOrderSaveRef.current = false;
     event.dataTransfer.effectAllowed = "move";
     event.dataTransfer.setData("text/plain", String(fieldId));
+  };
+
+  const finishFieldDrag = () => {
+    saveFieldOrder();
+    setDraggedFieldId(null);
   };
 
   const getFieldIcon = (fieldKey: string) => {
@@ -650,12 +664,13 @@ export default function BuilderRoute() {
                 onDragOver={(event) => {
                   event.preventDefault();
                   event.dataTransfer.dropEffect = "move";
+                  moveDraggedField(field.id);
                 }}
                 onDrop={(event) => {
                   event.preventDefault();
-                  moveDraggedField(field.id);
+                  finishFieldDrag();
                 }}
-                onDragEnd={() => setDraggedFieldId(null)}
+                onDragEnd={finishFieldDrag}
               >
                 <div className="simpleFieldInfo">
                   <button
