@@ -568,9 +568,86 @@
 
 .simpleAddField {
   display: grid;
-  grid-template-columns: repeat(4, minmax(110px, 1fr)) auto auto;
-  gap: 10px;
+  grid-template-columns: minmax(180px, 1.15fr) minmax(150px, 0.85fr) minmax(220px, 1.2fr) auto auto;
+  gap: 12px;
+  align-items: end;
+  padding: 16px;
+  border: 1px solid #dbeafe;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #f8fcff 0%, #f1f8ff 100%);
+  box-shadow: 0 14px 34px rgba(15, 51, 74, 0.07);
+}
+
+.simpleAddField .simpleField {
+  margin: 0;
+}
+
+.simpleRequiredCheck {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid #cfe1f2;
+  border-radius: 12px;
+  background: #ffffff;
+  white-space: nowrap;
+}
+
+.simpleFieldHelper,
+.simpleFieldListHeader {
+  grid-column: 1 / -1;
+}
+
+.simpleFieldHelper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
   align-items: center;
+  padding-top: 2px;
+}
+
+.simpleFieldHelper span {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.simplePresetButton {
+  min-height: 34px;
+  border: 1px solid #bfdbfe;
+  border-radius: 999px;
+  padding: 0 12px;
+  background: #ffffff;
+  color: #0f334a;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 850;
+  cursor: pointer;
+  box-shadow: 0 6px 14px rgba(15, 51, 74, 0.05);
+  transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.simplePresetButton:hover {
+  transform: translateY(-1px);
+  border-color: #93c5fd;
+  background: #eff6ff;
+}
+
+.simpleFieldListHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  margin-top: 18px;
+  color: #0f172a;
+}
+
+.simpleFieldListHeader strong {
+  font-weight: 900;
+}
+
+.simpleFieldListHeader span {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 800;
 }
 
 .simpleFieldList {

@@ -31,6 +31,51 @@ const launcherAnimationOptions = [
   { label: "Pulse", value: "pulse" }
 ];
 
+const fieldTypeOptions = [
+  { label: "Short text", value: "text" },
+  { label: "Phone number", value: "tel" },
+  { label: "Email", value: "email" },
+  { label: "Long answer", value: "textarea" }
+];
+
+const fieldPresets = [
+  { label: "Email", fieldType: "email", placeholder: "Enter your email", required: false },
+  { label: "Pincode", fieldType: "text", placeholder: "Enter delivery pincode", required: true },
+  { label: "Landmark", fieldType: "text", placeholder: "Near shop, building, or road", required: false },
+  { label: "Alternate phone", fieldType: "tel", placeholder: "Enter alternate phone number", required: false },
+  { label: "State", fieldType: "text", placeholder: "Enter your state", required: false },
+  { label: "Order note", fieldType: "textarea", placeholder: "Any special request", required: false }
+];
+
+const toFieldKey = (value: string) => {
+  const words = value
+    .trim()
+    .replace(/[^a-zA-Z0-9]+/g, " ")
+    .split(" ")
+    .filter(Boolean);
+
+  if (!words.length) return "customField";
+
+  return words
+    .map((word, index) => {
+      const lower = word.toLowerCase();
+      return index === 0 ? lower : `${lower.charAt(0).toUpperCase()}${lower.slice(1)}`;
+    })
+    .join("");
+};
+
+const makeUniqueFieldKey = (value: string, existingKeys: string[]) => {
+  const baseKey = toFieldKey(value);
+  const taken = new Set(existingKeys);
+  if (!taken.has(baseKey)) return baseKey;
+
+  let index = 2;
+  while (taken.has(`${baseKey}${index}`)) {
+    index += 1;
+  }
+  return `${baseKey}${index}`;
+};
+
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   const profile = await getFunnelProfile(session.shop);
@@ -95,14 +140,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   if (intent === "create-field") {
     const label = String(formData.get("label") || "").trim();
-    const fieldKey = String(formData.get("fieldKey") || "").trim();
+    const requestedFieldKey = String(formData.get("fieldKey") || "").trim();
     const fieldType = String(formData.get("fieldType") || "text").trim();
     const placeholder = String(formData.get("placeholder") || "").trim();
     const required = formData.get("required") === "on";
 
-    if (!label || !fieldKey) {
-      return { status: "error" as const, message: "Field label and key are required." };
+    if (!label) {
+      return { status: "error" as const, message: "Field label is required." };
     }
+
+    const fieldKey = makeUniqueFieldKey(requestedFieldKey || label, profile.formFields.map((field) => field.fieldKey));
 
     await prisma.codFormField.create({
       data: {
@@ -163,9 +210,23 @@ export default function BuilderRoute() {
     borderRadius: String(profile.borderRadius),
     collectAddress: profile.collectAddress
   });
+  const [newField, setNewField] = useState({
+    label: "",
+    fieldType: "text",
+    placeholder: "",
+    required: false,
+  });
+  const isAddingField =
+    navigation.state !== "idle" &&
+    navigation.formData?.get("intent") === "create-field";
+  const generatedFieldKey = toFieldKey(newField.label);
 
   const updateSetting = (key: keyof typeof formSettings, value: string | boolean) => {
     setFormSettings((current) => ({ ...current, [key]: value }));
+  };
+
+  const updateNewField = (key: keyof typeof newField, value: string | boolean) => {
+    setNewField((current) => ({ ...current, [key]: value }));
   };
 
   const getFieldIcon = (fieldKey: string) => {
@@ -441,34 +502,87 @@ export default function BuilderRoute() {
           <div className="simpleCardHeader">
             <div>
               <h2>Fields</h2>
-              <p>Show, hide, add, or delete fields from the live COD form.</p>
+              <p>Add a field in one line. The app creates the technical key automatically.</p>
             </div>
           </div>
 
           <Form method="post" className="simpleAddField">
             <input type="hidden" name="intent" value="create-field" />
-            <input name="label" placeholder="Field label" />
-            <input name="fieldKey" placeholder="field_key" />
-            <select name="fieldType" defaultValue="text">
-              <option value="text">Text</option>
-              <option value="tel">Phone</option>
-              <option value="email">Email</option>
-              <option value="textarea">Textarea</option>
-            </select>
-            <input name="placeholder" placeholder="Placeholder" />
-            <label className="simpleCheck">
-              <input type="checkbox" name="required" />
-              <span>Required</span>
+            <input type="hidden" name="fieldKey" value={generatedFieldKey} />
+            <label className="simpleField">
+              <span>Field name</span>
+              <input
+                name="label"
+                placeholder="Example: Pincode"
+                value={newField.label}
+                onChange={(event) => updateNewField("label", event.currentTarget.value)}
+              />
             </label>
-            <button type="submit" className="simpleSecondary">Add field</button>
+            <label className="simpleField">
+              <span>Answer type</span>
+              <select
+                name="fieldType"
+                value={newField.fieldType}
+                onChange={(event) => updateNewField("fieldType", event.currentTarget.value)}
+              >
+                {fieldTypeOptions.map((option) => (
+                  <option value={option.value} key={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </label>
+            <label className="simpleField">
+              <span>Placeholder</span>
+              <input
+                name="placeholder"
+                placeholder="Example: Enter delivery pincode"
+                value={newField.placeholder}
+                onChange={(event) => updateNewField("placeholder", event.currentTarget.value)}
+              />
+            </label>
+            <label className="simpleCheck simpleRequiredCheck">
+              <input
+                type="checkbox"
+                name="required"
+                checked={newField.required}
+                onChange={(event) => updateNewField("required", event.currentTarget.checked)}
+              />
+              <span>Required field</span>
+            </label>
+            <button type="submit" className="simplePrimary" disabled={isAddingField}>
+              {isAddingField ? "Adding..." : "Add field"}
+            </button>
+            <div className="simpleFieldHelper">
+              <span>Quick fill:</span>
+              {fieldPresets.map((preset) => (
+                <button
+                  type="button"
+                  className="simplePresetButton"
+                  key={preset.label}
+                  onClick={() => setNewField(preset)}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
           </Form>
+
+          <div className="simpleFieldListHeader">
+            <strong>Current form fields</strong>
+            <span>{fields.length} total · {activeFields.length} visible</span>
+          </div>
 
           <div className="simpleFieldList">
             {fields.map((field) => (
               <div className="simpleFieldRow" key={field.id}>
                 <div>
                   <strong>{field.label}</strong>
-                  <span>{field.fieldKey} · {field.fieldType} · {field.required ? "required" : "optional"}</span>
+                  <span>
+                    {fieldTypeOptions.find((option) => option.value === field.fieldType)?.label || field.fieldType}
+                    {" · "}
+                    {field.required ? "Required" : "Optional"}
+                    {" · "}
+                    {field.active ? "Visible on form" : "Hidden from form"}
+                  </span>
                 </div>
                 <div className="simpleRowActions">
                   <Form method="post">
