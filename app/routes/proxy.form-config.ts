@@ -77,5 +77,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       price: url.searchParams.get("price") || "",
       currency: profile.defaultCurrency
     }
+  }, {
+    headers: {
+      "Cache-Control": "no-store, max-age=0"
+    }
   });
 };

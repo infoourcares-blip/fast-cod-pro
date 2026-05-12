@@ -247,7 +247,12 @@
 
   async function enhanceFields(container, endpoint, accentColor) {
     try {
-      var response = await fetch(endpoint, { headers: { Accept: "application/json" } });
+      var configUrl = new URL(endpoint, window.location.origin);
+      configUrl.searchParams.set("_fast_cod_ts", String(Date.now()));
+      var response = await fetch(configUrl.toString(), {
+        cache: "no-store",
+        headers: { Accept: "application/json" }
+      });
       var payload = await response.json();
       var fields = payload.fields && payload.fields.length ? payload.fields : defaultFields();
       var formConfig = payload.form || {};
