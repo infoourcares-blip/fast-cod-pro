@@ -1,5 +1,6 @@
 import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
-import { NavLink, Outlet, useLoaderData, useRouteError } from "react-router";
+import { Outlet, useLoaderData, useRouteError } from "react-router";
+import { NavMenu } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { AppProvider } from "@shopify/shopify-app-react-router/react";
 
@@ -27,42 +28,19 @@ export default function App() {
   const { apiKey } = useLoaderData<typeof loader>();
   const whatsappSupportUrl =
     "https://wa.me/919718127346?text=Hi%20Fast%20COD%20Pro%20support%2C%20I%20need%20help%20with%20my%20Shopify%20app.";
-  const links = [
-    { to: "/app", label: "Dashboard" },
-    { to: "/app/builder", label: "COD Form" },
-    { to: "/app/submissions", label: "Orders Queue" },
-    { to: "/app/billing", label: "Billing Plans" },
-    { to: "/app/launch", label: "Launch Readiness" },
-  ] as const;
 
   return (
     <AppProvider embedded apiKey={apiKey}>
+      <NavMenu>
+        <a href="/app" rel="home">Dashboard</a>
+        <a href="/app/builder">COD Form</a>
+        <a href="/app/submissions">Orders Queue</a>
+        <a href="/app/billing">Billing Plans</a>
+        <a href="/app/launch">Launch Readiness</a>
+      </NavMenu>
       <div className="appFrame">
         <div className="appLayout">
           <div className="appContent">
-            <header className="appTopBar">
-              <div className="appTopBrand">
-                <div className="brandMark" aria-hidden="true">FC</div>
-                <div>
-                  <div className="sidebarBrandTitle">Fast COD Pro</div>
-                  <div className="sidebarBrandSub">Conversion OS</div>
-                </div>
-              </div>
-              <nav className="appTopNav" aria-label="Fast COD Pro sections">
-                {links.map((link) => (
-                  <NavLink
-                    key={`${link.to}-${link.label}`}
-                    to={link.to}
-                    className={({ isActive }) =>
-                      ["appTopNavLink", isActive ? "appTopNavLinkActive" : ""].filter(Boolean).join(" ")
-                    }
-                    end={link.to === "/app"}
-                  >
-                    {link.label}
-                  </NavLink>
-                ))}
-              </nav>
-            </header>
             <Outlet />
           </div>
         </div>
