@@ -77,11 +77,16 @@ export default function App() {
           aria-label="Open WhatsApp support chat"
           title="WhatsApp support"
         >
+          <span className="whatsappSupportPrompt">Hi, how may I help you?</span>
           <span className="whatsappSupportStatus" aria-hidden="true" />
           <span className="whatsappSupportIcon" aria-hidden="true">
-            <svg viewBox="0 0 32 32" focusable="false">
-              <path d="M10.8 24.4 5.6 26l1.7-5a10.9 10.9 0 1 1 3.5 3.4Z" />
-              <path d="M11.6 11.2c.3-.7.5-.7.9-.7h.7c.2 0 .5.1.7.5l.9 2c.1.3.2.5 0 .8l-.6.8c-.2.2-.2.4 0 .7.4.8 1.2 1.6 2 2.1.9.6 1.6.8 1.9.6.2-.2.8-1 1-1.3.2-.3.5-.3.8-.2l2.1 1c.4.2.6.3.7.5.1.5-.1 1.4-.6 2-.5.6-1.5 1.2-2.6 1.2-1.3 0-3.3-.7-5.3-2.4-2.5-2.1-4-4.8-4.1-6.2 0-.8.8-1.4 1.5-1.4Z" />
+            <svg viewBox="0 0 32 32" focusable="false" role="img">
+              <path
+                d="M16 4.4c-6.2 0-11.2 4.8-11.2 10.8 0 2.1.6 4.1 1.8 5.8L5.2 27l6.3-1.6c1.4.7 2.9 1.1 4.5 1.1 6.2 0 11.2-4.8 11.2-10.7S22.2 4.4 16 4.4Z"
+              />
+              <path
+                d="M11.6 10.8c.3-.6.5-.7.9-.7h.7c.2 0 .5.1.7.5l.8 1.9c.1.3.2.6 0 .8l-.5.7c-.2.2-.3.4-.1.8.4.7 1.1 1.5 2 2.1.8.5 1.6.8 1.9.6.3-.3.7-.9.9-1.2.2-.3.5-.4.8-.2l2 1c.4.2.6.3.6.6.1.5-.1 1.4-.6 1.9-.5.6-1.4 1.1-2.5 1.1-1.3 0-3.2-.7-5.2-2.3-2.4-2-3.9-4.6-4-5.9 0-.7.3-1.2.7-1.7Z"
+              />
             </svg>
           </span>
         </a>
