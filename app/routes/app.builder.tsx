@@ -136,6 +136,8 @@ export default function BuilderRoute() {
     successMessage: profile.successMessage,
     buttonBgColor: profile.buttonBgColor,
     buttonTextColor: profile.buttonTextColor,
+    launcherBgColor: profile.launcherBgColor,
+    launcherTextColor: profile.launcherTextColor,
     themeColor: profile.themeColor,
     borderRadius: String(profile.borderRadius),
     collectAddress: profile.collectAddress
@@ -218,7 +220,7 @@ export default function BuilderRoute() {
 
             <div className="simpleTwo">
               <label className="simpleField">
-                <span>Button color</span>
+                <span>Form button color</span>
                 <input
                   type="color"
                   name="buttonBgColor"
@@ -227,12 +229,33 @@ export default function BuilderRoute() {
                 />
               </label>
               <label className="simpleField">
-                <span>Text color</span>
+                <span>Form button text</span>
                 <input
                   type="color"
                   name="buttonTextColor"
                   value={formSettings.buttonTextColor}
                   onChange={(event) => updateSetting("buttonTextColor", event.currentTarget.value)}
+                />
+              </label>
+            </div>
+
+            <div className="simpleTwo">
+              <label className="simpleField">
+                <span>Storefront button color</span>
+                <input
+                  type="color"
+                  name="launcherBgColor"
+                  value={formSettings.launcherBgColor}
+                  onChange={(event) => updateSetting("launcherBgColor", event.currentTarget.value)}
+                />
+              </label>
+              <label className="simpleField">
+                <span>Storefront button text</span>
+                <input
+                  type="color"
+                  name="launcherTextColor"
+                  value={formSettings.launcherTextColor}
+                  onChange={(event) => updateSetting("launcherTextColor", event.currentTarget.value)}
                 />
               </label>
             </div>
@@ -260,9 +283,6 @@ export default function BuilderRoute() {
               </label>
             </div>
 
-            <input type="hidden" name="launcherBgColor" value={profile.launcherBgColor} />
-            <input type="hidden" name="launcherTextColor" value={profile.launcherTextColor} />
-
             <label className="simpleCheck">
               <input
                 type="checkbox"
@@ -282,9 +302,16 @@ export default function BuilderRoute() {
             <div className="simplePreview" style={{
               ["--simple-button-bg" as string]: formSettings.buttonBgColor,
               ["--simple-button-text" as string]: formSettings.buttonTextColor,
+              ["--simple-launcher-bg" as string]: formSettings.launcherBgColor,
+              ["--simple-launcher-text" as string]: formSettings.launcherTextColor,
               ["--simple-accent" as string]: formSettings.themeColor,
               ["--simple-radius" as string]: `${formSettings.borderRadius || 18}px`,
             }}>
+              <div className="simplePreviewLauncher">
+                <span>🛒</span>
+                <strong>{formSettings.submitButtonLabel}</strong>
+              </div>
+
               <div className="simplePreviewHeader">
                 <span className="simplePreviewHome">⌂</span>
                 <div>

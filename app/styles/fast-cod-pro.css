@@ -246,13 +246,36 @@
 
 .simplePreview {
   display: grid;
-  gap: 0;
+  gap: 10px;
   padding: 0;
   border-radius: 22px;
   overflow: hidden;
   background: #f8fafc;
   border: 1px solid #dbe3ed;
   box-shadow: 0 18px 42px rgba(15, 23, 42, 0.1);
+}
+
+.simplePreviewLauncher {
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 14px 14px 4px;
+  border-radius: var(--simple-radius, 14px);
+  background: var(--simple-launcher-bg, #111111);
+  color: var(--simple-launcher-text, #ffffff);
+  box-shadow: 0 14px 24px rgba(15, 23, 42, 0.16);
+}
+
+.simplePreviewLauncher strong {
+  color: inherit;
+  font-size: 14px;
+  font-weight: 950;
+}
+
+.simplePreviewLauncher span {
+  font-size: 16px;
 }
 
 .simplePreviewHeader {
