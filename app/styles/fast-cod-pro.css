@@ -245,6 +245,13 @@
   color: #be123c;
 }
 
+.simplePrimary:disabled,
+.simpleSecondary:disabled,
+.simpleDanger:disabled {
+  cursor: progress;
+  opacity: 0.72;
+}
+
 .simplePreview {
   display: grid;
   gap: 10px;

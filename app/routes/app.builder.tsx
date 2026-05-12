@@ -1,5 +1,5 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { Form, Link, useActionData, useLoaderData } from "react-router";
+import { Form, Link, useActionData, useLoaderData, useNavigation } from "react-router";
 import { useState } from "react";
 import prisma from "../db.server";
 import { getFunnelProfile } from "../lib/funnel.server";
@@ -138,6 +138,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 export default function BuilderRoute() {
   const { profile, fields, themeEditorUrl } = useLoaderData<typeof loader>();
   const actionData = useActionData<ActionData>();
+  const navigation = useNavigation();
+  const isSavingForm =
+    navigation.state !== "idle" &&
+    navigation.formData?.get("intent") === "save-form-settings";
   const activeFields = fields.filter((field) => field.active);
   const previewFields = activeFields.length ? activeFields : fields;
   const previewAmount = "INR 1.00";
@@ -193,7 +197,9 @@ export default function BuilderRoute() {
             <input type="hidden" name="intent" value="save-form-settings" />
             <div className="simpleCardHeader">
               <h2>Form settings</h2>
-              <button type="submit" className="simplePrimary">Save form</button>
+              <button type="submit" className="simplePrimary" disabled={isSavingForm}>
+                {isSavingForm ? "Saving..." : "Save form"}
+              </button>
             </div>
 
             <label className="simpleField">
