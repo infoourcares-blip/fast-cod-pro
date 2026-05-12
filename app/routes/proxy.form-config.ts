@@ -55,6 +55,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       design: {
         launcherBgColor: profile.launcherBgColor,
         launcherTextColor: profile.launcherTextColor,
+        launcherIcon: profile.launcherIcon,
         headerBgColor: profile.headerBgColor,
         headerTextColor: profile.headerTextColor,
         modalBgColor: profile.modalBgColor,

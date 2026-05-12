@@ -51,6 +51,7 @@ model FunnelProfile {
   themeColor        String    @default("#1d4ed8")
   launcherBgColor   String    @default("#111111")
   launcherTextColor String    @default("#ffffff")
+  launcherIcon      String    @default("🛒")
   headerBgColor     String    @default("#111827")
   headerTextColor   String    @default("#ffffff")
   modalBgColor      String    @default("#f8fafc")

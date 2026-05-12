@@ -180,6 +180,7 @@
 }
 
 .simpleField input,
+.simpleField select,
 .simpleAddField input,
 .simpleAddField select {
   min-height: 44px;

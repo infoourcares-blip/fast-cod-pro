@@ -56,6 +56,7 @@
       {
         launcherBgColor: "#111111",
         launcherTextColor: "#ffffff",
+        launcherIcon: "🛒",
         headerBgColor: "#111827",
         headerTextColor: "#ffffff",
         modalBgColor: "#f8fafc",
@@ -259,6 +260,7 @@
       var title = container.querySelector(".fast-cod-pro-form-title");
       var subtitle = container.querySelector(".fast-cod-pro-sheet-title-copy span");
       var form = container.querySelector(".fast-cod-pro-grid");
+      var launcherIcon = container.querySelector(".fast-cod-pro-launcher-icon");
       var launcherLabel = container.querySelector(".fast-cod-pro-launcher-label");
       var status = container.querySelector(".fast-cod-pro-status");
       var fieldHtml = fields.map(fieldMarkup).join("");
@@ -282,6 +284,10 @@
       if (title) title.textContent = formConfig.title || "Fast COD Pro order form";
       if (subtitle) subtitle.textContent = formConfig.subtitle || "Fast cash-on-delivery checkout";
       container.dataset.submitButtonLabel = formConfig.submitButtonLabel || "Place Fast COD Pro Order";
+      if (launcherIcon) {
+        launcherIcon.textContent = formConfig.design && typeof formConfig.design.launcherIcon === "string" ? formConfig.design.launcherIcon : "🛒";
+        launcherIcon.hidden = !launcherIcon.textContent;
+      }
       if (launcherLabel) launcherLabel.textContent = formConfig.submitButtonLabel || "Order with Fast COD Pro";
       if (status) status.textContent = "";
       applyDesign(container, formConfig.design, accentColor);

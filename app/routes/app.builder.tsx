@@ -23,6 +23,8 @@ const defaultColors = {
   headerTextColor: "#ffffff",
 };
 
+const launcherIconOptions = ["🛒", "📦", "💵", "🚚", "⚡", "🛍", "✅", ""];
+
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   const profile = await getFunnelProfile(session.shop);
@@ -51,6 +53,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const themeColor = String(formData.get("themeColor") || "").trim();
     const launcherBgColor = String(formData.get("launcherBgColor") || "").trim();
     const launcherTextColor = String(formData.get("launcherTextColor") || "").trim();
+    const launcherIcon = String(formData.get("launcherIcon") || "").trim();
     const borderRadius = Number(formData.get("borderRadius") || 16);
     const collectAddress = formData.get("collectAddress") === "on";
 
@@ -68,6 +71,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         themeColor,
         launcherBgColor,
         launcherTextColor,
+        launcherIcon,
         buttonBgColor,
         buttonTextColor,
         borderRadius: Number.isFinite(borderRadius) ? Math.min(28, Math.max(8, borderRadius)) : 16,
@@ -138,6 +142,7 @@ export default function BuilderRoute() {
     buttonTextColor: profile.buttonTextColor,
     launcherBgColor: profile.launcherBgColor,
     launcherTextColor: profile.launcherTextColor,
+    launcherIcon: profile.launcherIcon,
     themeColor: profile.themeColor,
     borderRadius: String(profile.borderRadius),
     collectAddress: profile.collectAddress
@@ -260,6 +265,21 @@ export default function BuilderRoute() {
               </label>
             </div>
 
+            <label className="simpleField">
+              <span>Storefront button icon</span>
+              <select
+                name="launcherIcon"
+                value={formSettings.launcherIcon}
+                onChange={(event) => updateSetting("launcherIcon", event.currentTarget.value)}
+              >
+                {launcherIconOptions.map((icon) => (
+                  <option value={icon} key={icon || "none"}>
+                    {icon ? `${icon} ${icon === "🛒" ? "Cart" : icon === "📦" ? "Box" : icon === "💵" ? "Cash" : icon === "🚚" ? "Delivery" : icon === "⚡" ? "Fast" : icon === "🛍" ? "Bag" : "Check"}` : "No icon"}
+                  </option>
+                ))}
+              </select>
+            </label>
+
             <div className="simpleTwo">
               <label className="simpleField">
                 <span>Accent color</span>
@@ -308,7 +328,7 @@ export default function BuilderRoute() {
               ["--simple-radius" as string]: `${formSettings.borderRadius || 18}px`,
             }}>
               <div className="simplePreviewLauncher">
-                <span>🛒</span>
+                {formSettings.launcherIcon ? <span>{formSettings.launcherIcon}</span> : null}
                 <strong>{formSettings.submitButtonLabel}</strong>
               </div>
 
