@@ -1,4 +1,4 @@
-name = "Fast Cod Pro Web"
+name = "Fast COD Pro Web"
 roles = ["frontend", "backend"]
 webhooks_path = "/webhooks/app/uninstalled"
 

@@ -240,7 +240,7 @@
       if (!response.ok) return null;
       return applyProductData(container, await response.json());
     } catch (error) {
-      console.error("Fast Cod Pro product price fetch failed", error);
+      console.error("Fast COD Pro product price fetch failed", error);
       return null;
     }
   }
@@ -280,7 +280,7 @@
       if (status) status.textContent = "";
       applyDesign(container, formConfig.design, accentColor);
     } catch (error) {
-      console.error("Fast Cod Pro config fetch failed", error);
+      console.error("Fast COD Pro config fetch failed", error);
     }
   }
 
@@ -500,7 +500,7 @@
   function initAll() {
     document.querySelectorAll("[data-fast-cod-pro-root]").forEach(function (node) {
       init(node).catch(function (error) {
-        console.error("Fast Cod Pro form failed to initialize", error);
+        console.error("Fast COD Pro form failed to initialize", error);
       });
     });
   }
