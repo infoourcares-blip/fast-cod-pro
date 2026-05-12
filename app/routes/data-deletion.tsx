@@ -13,7 +13,8 @@ export default function DataDeletionRoute() {
           <h2>Automatic deletion</h2>
           <p>
             When the app is uninstalled, stored sessions and merchant configuration records are
-            removed from the app database.
+            removed from the app database. Related COD submission records are deleted with the
+            merchant configuration.
           </p>
         </section>
 

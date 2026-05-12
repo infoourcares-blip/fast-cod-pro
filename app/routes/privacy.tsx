@@ -31,7 +31,7 @@ export default function PrivacyRoute() {
           <h2>How data is stored</h2>
           <p>
             The production app stores merchant configuration, sessions, and COD submissions in a
-            managed PostgreSQL database with restricted access. Access should be limited to
+            managed PostgreSQL database with restricted access. Access is limited to
             authorized operators for support, troubleshooting, and compliance requests.
           </p>
         </section>
@@ -41,7 +41,7 @@ export default function PrivacyRoute() {
           <p>
             Fast COD Pro supports Shopify privacy webhooks for customer data requests, customer
             redaction, and shop redaction. When a merchant uninstalls the app, merchant-owned app
-            data is deleted.
+            data and related COD submissions are deleted.
           </p>
         </section>
 

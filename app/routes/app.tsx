@@ -4,14 +4,16 @@ import { boundary } from "@shopify/shopify-app-react-router/server";
 import { AppProvider } from "@shopify/shopify-app-react-router/react";
 
 import { authenticate, sessionStorage } from "../shopify.server";
+import { ensureExpiringOfflineTokenForShop } from "../lib/offline-token.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
 
   try {
     await sessionStorage.storeSession(session);
+    await ensureExpiringOfflineTokenForShop(session.shop);
   } catch (error) {
-    console.error("Fast COD Pro could not persist admin session", {
+    console.error("Fast COD Pro could not persist or refresh admin session", {
       shop: session.shop,
       error: error instanceof Error ? error.message : String(error)
     });
