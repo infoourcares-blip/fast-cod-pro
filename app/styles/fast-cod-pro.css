@@ -1478,18 +1478,6 @@
 }
 
 @media (max-width: 1100px) {
-  .appLayout {
-    grid-template-columns: 1fr;
-  }
-
-  .sidebar {
-    position: static;
-  }
-
-  .sideMenu {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .proHero,
   .proHeroCompact,
   .proBuilderFrame,
@@ -1531,8 +1519,7 @@
   .proStatsGrid,
   .proGridThree,
   .proEventGrid,
-  .proFieldGrid,
-  .sideMenu {
+  .proFieldGrid {
     grid-template-columns: 1fr;
   }
 
@@ -1549,8 +1536,8 @@
   margin: 0 auto;
   max-width: 1460px;
   display: grid;
-  grid-template-columns: 280px minmax(0, 1fr);
-  gap: 20px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
 }
 
 .sidebar {
@@ -1849,6 +1836,76 @@
 
 .appContent {
   min-width: 0;
+}
+
+.appTopBar {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  margin: 0 24px 12px;
+  padding: 12px 14px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.06);
+}
+
+.appTopBrand {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  min-width: 210px;
+}
+
+.appTopNav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.appTopNavLink,
+.appTopNavLink:visited {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  color: #475569;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 850;
+  text-decoration: none;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+
+.appTopNavLink:hover {
+  border-color: #cfe1f2;
+  background: #f4fbff;
+  color: #0f334a;
+}
+
+.appTopNavLinkActive,
+.appTopNavLinkActive:visited {
+  border-color: #bbf7d0;
+  background: #ecfdf5;
+  color: #065f46;
+  box-shadow: 0 8px 18px rgba(15, 118, 110, 0.08);
+}
+
+@media (max-width: 640px) {
+  .appTopBar {
+    align-items: stretch;
+    flex-direction: column;
+    margin: 0 14px 10px;
+  }
+
+  .appTopNav {
+    justify-content: flex-start;
+  }
 }
 
 .shell {

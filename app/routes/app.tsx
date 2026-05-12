@@ -28,46 +28,41 @@ export default function App() {
   const whatsappSupportUrl =
     "https://wa.me/919718127346?text=Hi%20Fast%20COD%20Pro%20support%2C%20I%20need%20help%20with%20my%20Shopify%20app.";
   const links = [
-    { to: "/app", label: "Dashboard", level: "primary", icon: "dashboard" },
-    { to: "/app/builder", label: "COD Form", level: "secondary", icon: "form" },
-    { to: "/app/submissions", label: "Orders Queue", level: "secondary", icon: "queue" },
-    { to: "/app/billing", label: "Billing Plans", level: "secondary", icon: "billing" },
-    { to: "/app/launch", label: "Launch Readiness", level: "secondary", icon: "launch" },
+    { to: "/app", label: "Dashboard" },
+    { to: "/app/builder", label: "COD Form" },
+    { to: "/app/submissions", label: "Orders Queue" },
+    { to: "/app/billing", label: "Billing Plans" },
+    { to: "/app/launch", label: "Launch Readiness" },
   ] as const;
 
   return (
     <AppProvider embedded apiKey={apiKey}>
       <div className="appFrame">
         <div className="appLayout">
-          <aside className="sidebar">
-            <div className="sidebarBrand">
-              <div className="brandMark" aria-hidden="true">FC</div>
-              <div>
-                <div className="sidebarBrandTitle">Fast COD Pro</div>
-                <div className="sidebarBrandSub">Conversion OS</div>
-              </div>
-            </div>
-            <nav className="sideMenu">
-              {links.map((link) => (
-                <NavLink
-                  key={`${link.to}-${link.label}`}
-                  to={link.to}
-                  className={({ isActive }) =>
-                    [
-                      "sideMenuLink",
-                      link.level === "primary" ? "sideMenuLinkPrimary" : "sideMenuLinkSecondary",
-                      isActive ? "sideMenuLinkActive" : "",
-                    ].filter(Boolean).join(" ")
-                  }
-                  end={link.to === "/app"}
-                >
-                  <span className={`sideMenuIcon sideMenuIcon-${link.icon}`} aria-hidden="true" />
-                  {link.label}
-                </NavLink>
-              ))}
-            </nav>
-          </aside>
           <div className="appContent">
+            <header className="appTopBar">
+              <div className="appTopBrand">
+                <div className="brandMark" aria-hidden="true">FC</div>
+                <div>
+                  <div className="sidebarBrandTitle">Fast COD Pro</div>
+                  <div className="sidebarBrandSub">Conversion OS</div>
+                </div>
+              </div>
+              <nav className="appTopNav" aria-label="Fast COD Pro sections">
+                {links.map((link) => (
+                  <NavLink
+                    key={`${link.to}-${link.label}`}
+                    to={link.to}
+                    className={({ isActive }) =>
+                      ["appTopNavLink", isActive ? "appTopNavLinkActive" : ""].filter(Boolean).join(" ")
+                    }
+                    end={link.to === "/app"}
+                  >
+                    {link.label}
+                  </NavLink>
+                ))}
+              </nav>
+            </header>
             <Outlet />
           </div>
         </div>
