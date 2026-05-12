@@ -49,6 +49,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       title: profile.formTitle,
       subtitle: profile.formSubtitle,
       submitButtonLabel: profile.submitButtonLabel,
+      formButtonLabel: profile.formButtonLabel,
       successMessage: profile.successMessage,
       themeColor: profile.themeColor,
       collectAddress: profile.collectAddress,

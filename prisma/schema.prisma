@@ -47,6 +47,7 @@ model FunnelProfile {
   formTitle         String    @default("Quick COD Checkout")
   formSubtitle      String    @default("Fill your delivery details and place your COD order in seconds.")
   submitButtonLabel String    @default("Place COD Order")
+  formButtonLabel   String    @default("Place COD Order")
   successMessage    String    @default("Your COD order request has been received.")
   themeColor        String    @default("#1d4ed8")
   launcherBgColor   String    @default("#111111")

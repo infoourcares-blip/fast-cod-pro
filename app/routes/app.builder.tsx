@@ -53,6 +53,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const formTitle = String(formData.get("formTitle") || "").trim();
     const formSubtitle = String(formData.get("formSubtitle") || "").trim();
     const submitButtonLabel = String(formData.get("submitButtonLabel") || "").trim();
+    const formButtonLabel = String(formData.get("formButtonLabel") || "").trim();
     const successMessage = String(formData.get("successMessage") || "").trim();
     const buttonBgColor = String(formData.get("buttonBgColor") || "").trim();
     const buttonTextColor = String(formData.get("buttonTextColor") || "").trim();
@@ -64,8 +65,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const borderRadius = Number(formData.get("borderRadius") || 16);
     const collectAddress = formData.get("collectAddress") === "on";
 
-    if (!formTitle || !submitButtonLabel || !successMessage) {
-      return { status: "error" as const, message: "Form title, button label, and success message are required." };
+    if (!formTitle || !submitButtonLabel || !formButtonLabel || !successMessage) {
+      return { status: "error" as const, message: "Form title, button labels, and success message are required." };
     }
 
     await prisma.funnelProfile.update({
@@ -74,6 +75,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         formTitle,
         formSubtitle,
         submitButtonLabel,
+        formButtonLabel,
         successMessage,
         themeColor,
         launcherBgColor,
@@ -149,6 +151,7 @@ export default function BuilderRoute() {
     formTitle: profile.formTitle,
     formSubtitle: profile.formSubtitle,
     submitButtonLabel: profile.submitButtonLabel,
+    formButtonLabel: profile.formButtonLabel,
     successMessage: profile.successMessage,
     buttonBgColor: profile.buttonBgColor,
     buttonTextColor: profile.buttonTextColor,
@@ -221,11 +224,20 @@ export default function BuilderRoute() {
             </label>
 
             <label className="simpleField">
-              <span>Button text</span>
+              <span>Storefront button label</span>
               <input
                 name="submitButtonLabel"
                 value={formSettings.submitButtonLabel}
                 onChange={(event) => updateSetting("submitButtonLabel", event.currentTarget.value)}
+              />
+            </label>
+
+            <label className="simpleField">
+              <span>Form button label</span>
+              <input
+                name="formButtonLabel"
+                value={formSettings.formButtonLabel}
+                onChange={(event) => updateSetting("formButtonLabel", event.currentTarget.value)}
               />
             </label>
 
@@ -416,9 +428,9 @@ export default function BuilderRoute() {
                   </label>
                 ))}
                 <button type="button">
-                  {formSettings.submitButtonLabel.includes("Order")
-                    ? `${formSettings.submitButtonLabel} - ${previewAmount}`
-                    : `${formSettings.submitButtonLabel}`}
+                  {formSettings.formButtonLabel.includes("Order")
+                    ? `${formSettings.formButtonLabel} - ${previewAmount}`
+                    : `${formSettings.formButtonLabel}`}
                 </button>
               </div>
             </div>

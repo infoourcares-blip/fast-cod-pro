@@ -204,7 +204,7 @@
     quantityDisplay.value = String(quantity);
     subtotal.textContent = amount;
     total.textContent = amount;
-    submitButton.textContent = (container.dataset.submitButtonLabel || "Place Fast COD Pro Order") + " - " + amount;
+    submitButton.textContent = (container.dataset.formButtonLabel || "Place Fast COD Pro Order") + " - " + amount;
   }
 
   function applyProductData(container, product) {
@@ -298,6 +298,7 @@
       if (title) title.textContent = formConfig.title || "Fast COD Pro order form";
       if (subtitle) subtitle.textContent = formConfig.subtitle || "Fast cash-on-delivery checkout";
       container.dataset.submitButtonLabel = formConfig.submitButtonLabel || "Place Fast COD Pro Order";
+      container.dataset.formButtonLabel = formConfig.formButtonLabel || formConfig.submitButtonLabel || "Place Fast COD Pro Order";
       if (launcherIcon) {
         launcherIcon.textContent = formConfig.design && typeof formConfig.design.launcherIcon === "string" ? formConfig.design.launcherIcon : "🛒";
         launcherIcon.hidden = !launcherIcon.textContent;
