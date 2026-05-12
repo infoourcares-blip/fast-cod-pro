@@ -73,6 +73,19 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   }
   const shop = payload.data?.shop ?? null;
   const summary = await getFunnelSummary(session.shop);
+  const appUrl = (process.env.SHOPIFY_APP_URL?.trim() || new URL(request.url).origin).replace(/\/$/, "");
+  const supportEmail =
+    process.env.SUPPORT_EMAIL?.trim() ||
+    summary.profile.supportEmail?.trim() ||
+    "info.ourcares@gmail.com";
+  const supportUrl = `${appUrl}/support`;
+  const tutorialUrl =
+    process.env.SUPPORT_TUTORIAL_URL?.trim() ||
+    summary.profile.tutorialUrl?.trim() ||
+    `${supportUrl}#tutorial`;
+  const whatsappSupportUrl =
+    process.env.SUPPORT_WHATSAPP_URL?.trim() ||
+    "https://wa.me/919718127346?text=Hi%20Fast%20COD%20Pro%20support%2C%20I%20need%20help%20with%20my%20Shopify%20app.";
   const recentProducts: ProductCard[] = (payload.data?.products?.nodes ?? []).map(
     (product: {
       id: string;
@@ -89,11 +102,21 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     })
   );
 
-  return { shop, recentProducts, summary };
+  return {
+    shop,
+    recentProducts,
+    summary,
+    supportLinks: {
+      supportEmail,
+      supportUrl,
+      tutorialUrl,
+      whatsappSupportUrl
+    }
+  };
 };
 
 export default function DashboardRoute() {
-  const { shop, recentProducts, summary } = useLoaderData<typeof loader>();
+  const { shop, recentProducts, summary, supportLinks } = useLoaderData<typeof loader>();
   const latestSubmission = summary.profile.submissions[0] ?? null;
   const totalOrders = summary.stats.submissions;
   const monthlyOrders = summary.stats.monthlySubmissions;
@@ -101,8 +124,14 @@ export default function DashboardRoute() {
   const themeEditorUrl = shopHandle
     ? `https://admin.shopify.com/store/${shopHandle}/themes/current/editor?context=apps`
     : null;
-  const tutorialUrl = summary.profile.tutorialUrl;
-  const supportEmail = summary.profile.supportEmail;
+  const { supportEmail, tutorialUrl, whatsappSupportUrl } = supportLinks;
+  const supportSubject = encodeURIComponent(
+    `Fast COD Pro support for ${shop?.myshopifyDomain ?? "merchant store"}`
+  );
+  const supportBody = encodeURIComponent(
+    `Store: ${shop?.myshopifyDomain ?? ""}\nIssue:\nSteps to reproduce:\n`
+  );
+  const supportMailHref = `mailto:${supportEmail}?subject=${supportSubject}&body=${supportBody}`;
 
   const setupCompleted = [
     summary.stats.activeFormFields > 0,
@@ -292,12 +321,27 @@ export default function DashboardRoute() {
             <div className="proCardHeader">
               <div>
                 <h2>Support</h2>
-                <p>Quick links for merchant help and setup review.</p>
+                <p>
+                  Need help with setup, orders, or billing? Email us at{" "}
+                  <a className="proInlineLink" href={supportMailHref}>
+                    {supportEmail}
+                  </a>
+                  .
+                </p>
               </div>
             </div>
             <div className="proButtonRow">
-              <a className="proButton proButtonSecondary" href={tutorialUrl} target="_blank" rel="noreferrer">Watch tutorial</a>
-              <a className="proButton proButtonSecondary" href={`mailto:${supportEmail}?subject=Fast%20COD%20Pro%20Support`}>Contact support</a>
+              <a className="proButton proButtonSecondary" href={tutorialUrl} target="_blank" rel="noreferrer">
+                Watch tutorial
+              </a>
+              <a className="proButton proButtonSecondary" href={supportMailHref}>
+                Contact support
+              </a>
+              {whatsappSupportUrl ? (
+                <a className="proButton proButtonSecondary" href={whatsappSupportUrl} target="_blank" rel="noreferrer">
+                  WhatsApp support
+                </a>
+              ) : null}
             </div>
           </section>
         </div>

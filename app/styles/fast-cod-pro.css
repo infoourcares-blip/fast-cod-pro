@@ -1,9 +1,69 @@
 .appFrame {
+  position: relative;
   min-height: 100vh;
   background:
     radial-gradient(circle at top left, rgba(59, 130, 246, 0.08), transparent 24%),
     linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
   padding: 20px;
+}
+
+.whatsappSupportButton {
+  position: fixed;
+  right: 28px;
+  bottom: 28px;
+  z-index: 50;
+  width: 86px;
+  height: 86px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 72% 50%, #0f5be8 0 42%, transparent 43%),
+    radial-gradient(circle at 28% 58%, #ff6a00 0 48%, transparent 49%);
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.22);
+  text-decoration: none;
+  transform: translateZ(0);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.whatsappSupportButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 22px 42px rgba(15, 23, 42, 0.28);
+}
+
+.whatsappSupportButton:focus-visible {
+  outline: 3px solid rgba(20, 184, 166, 0.38);
+  outline-offset: 4px;
+}
+
+.whatsappSupportStatus {
+  position: absolute;
+  top: 0;
+  left: 6px;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: #00b900;
+  border: 3px solid #f8fafc;
+}
+
+.whatsappSupportIcon {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #ffffff;
+}
+
+.whatsappSupportIcon svg {
+  width: 29px;
+  height: 29px;
+  fill: none;
+  stroke: #ff6a00;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 /* Simple COD-first UI */
@@ -438,6 +498,17 @@
   background: #ffffff;
   color: var(--pro-text);
   box-shadow: none;
+}
+
+.proInlineLink,
+.proInlineLink:visited {
+  color: var(--pro-primary);
+  font-weight: 850;
+  text-decoration: none;
+}
+
+.proInlineLink:hover {
+  text-decoration: underline;
 }
 
 .proBadgeGrid {
@@ -2937,6 +3008,46 @@
   line-height: 1.7;
 }
 
+.legalActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.legalButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 14px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.legalButtonPrimary {
+  color: #fff;
+  background: #0f766e;
+  box-shadow: 0 12px 26px rgba(15, 118, 110, 0.22);
+}
+
+.legalButtonSecondary {
+  color: #0f172a;
+  background: #fff;
+  border: 1px solid #cbd5e1;
+}
+
+.legalNotice {
+  margin-top: 10px;
+  padding: 14px 16px;
+  border: 1px solid #99f6e4;
+  border-radius: 16px;
+  color: #134e4a;
+  background: #f0fdfa;
+  line-height: 1.65;
+}
+
 .legalSection {
   margin-top: 28px;
 }
@@ -3351,6 +3462,28 @@
 
   .appFrame {
     padding: 14px;
+  }
+
+  .whatsappSupportButton {
+    right: 18px;
+    bottom: 18px;
+    width: 72px;
+    height: 72px;
+  }
+
+  .whatsappSupportStatus {
+    width: 24px;
+    height: 24px;
+  }
+
+  .whatsappSupportIcon {
+    width: 34px;
+    height: 34px;
+  }
+
+  .whatsappSupportIcon svg {
+    width: 26px;
+    height: 26px;
   }
 
   .sidebar,
