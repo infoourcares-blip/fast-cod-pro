@@ -57,6 +57,7 @@
         launcherBgColor: "#111111",
         launcherTextColor: "#ffffff",
         launcherIcon: "🛒",
+        launcherAnimation: "none",
         headerBgColor: "#111827",
         headerTextColor: "#ffffff",
         modalBgColor: "#f8fafc",
@@ -90,6 +91,18 @@
     container.style.setProperty("--fast-cod-primary-bg", merged.buttonBgColor);
     container.style.setProperty("--fast-cod-primary-text", merged.buttonTextColor);
     container.style.setProperty("--fast-cod-radius", Math.max(8, Number(merged.borderRadius || 18)) + "px");
+  }
+
+  function applyLauncherAnimation(launcher, animation) {
+    if (!launcher) return;
+    launcher.classList.remove(
+      "fast-cod-pro-launcher--shaker",
+      "fast-cod-pro-launcher--bounce",
+      "fast-cod-pro-launcher--pulse"
+    );
+    if (animation === "shaker" || animation === "bounce" || animation === "pulse") {
+      launcher.classList.add("fast-cod-pro-launcher--" + animation);
+    }
   }
 
   function ensureHideStyle() {
@@ -260,6 +273,7 @@
       var title = container.querySelector(".fast-cod-pro-form-title");
       var subtitle = container.querySelector(".fast-cod-pro-sheet-title-copy span");
       var form = container.querySelector(".fast-cod-pro-grid");
+      var launcher = container.querySelector(".fast-cod-pro-launcher");
       var launcherIcon = container.querySelector(".fast-cod-pro-launcher-icon");
       var launcherLabel = container.querySelector(".fast-cod-pro-launcher-label");
       var status = container.querySelector(".fast-cod-pro-status");
@@ -291,6 +305,7 @@
       if (launcherLabel) launcherLabel.textContent = formConfig.submitButtonLabel || "Order with Fast COD Pro";
       if (status) status.textContent = "";
       applyDesign(container, formConfig.design, accentColor);
+      applyLauncherAnimation(launcher, formConfig.design && formConfig.design.launcherAnimation);
     } catch (error) {
       console.error("Fast COD Pro config fetch failed", error);
     }
@@ -326,6 +341,7 @@
       var label = launcher.textContent || "Order with Fast COD Pro";
       launcher.innerHTML = '<span class="fast-cod-pro-launcher-icon">🛒</span><span class="fast-cod-pro-launcher-label">' + escapeHtml(label) + "</span>";
     }
+    applyLauncherAnimation(launcher, "none");
 
     launcher.setAttribute("onclick", "var root=this.closest('[data-fast-cod-pro-root]');var modal=root&&root.querySelector('.fast-cod-pro-modal');if(modal){modal.hidden=false;document.body.classList.add('fast-cod-pro-modal-open');}return false;");
 

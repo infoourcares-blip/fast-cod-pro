@@ -24,6 +24,12 @@ const defaultColors = {
 };
 
 const launcherIconOptions = ["🛒", "📦", "💵", "🚚", "⚡", "🛍", "✅", ""];
+const launcherAnimationOptions = [
+  { label: "None", value: "none" },
+  { label: "Shaker", value: "shaker" },
+  { label: "Bounce", value: "bounce" },
+  { label: "Pulse", value: "pulse" }
+];
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
@@ -54,6 +60,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const launcherBgColor = String(formData.get("launcherBgColor") || "").trim();
     const launcherTextColor = String(formData.get("launcherTextColor") || "").trim();
     const launcherIcon = String(formData.get("launcherIcon") || "").trim();
+    const launcherAnimation = String(formData.get("launcherAnimation") || "none").trim();
     const borderRadius = Number(formData.get("borderRadius") || 16);
     const collectAddress = formData.get("collectAddress") === "on";
 
@@ -72,6 +79,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         launcherBgColor,
         launcherTextColor,
         launcherIcon,
+        launcherAnimation,
         buttonBgColor,
         buttonTextColor,
         borderRadius: Number.isFinite(borderRadius) ? Math.min(28, Math.max(8, borderRadius)) : 16,
@@ -143,6 +151,7 @@ export default function BuilderRoute() {
     launcherBgColor: profile.launcherBgColor,
     launcherTextColor: profile.launcherTextColor,
     launcherIcon: profile.launcherIcon,
+    launcherAnimation: profile.launcherAnimation,
     themeColor: profile.themeColor,
     borderRadius: String(profile.borderRadius),
     collectAddress: profile.collectAddress
@@ -280,6 +289,21 @@ export default function BuilderRoute() {
               </select>
             </label>
 
+            <label className="simpleField">
+              <span>Button animation</span>
+              <select
+                name="launcherAnimation"
+                value={formSettings.launcherAnimation}
+                onChange={(event) => updateSetting("launcherAnimation", event.currentTarget.value)}
+              >
+                {launcherAnimationOptions.map((animation) => (
+                  <option value={animation.value} key={animation.value}>
+                    {animation.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
             <div className="simpleTwo">
               <label className="simpleField">
                 <span>Accent color</span>
@@ -327,7 +351,7 @@ export default function BuilderRoute() {
               ["--simple-accent" as string]: formSettings.themeColor,
               ["--simple-radius" as string]: `${formSettings.borderRadius || 18}px`,
             }}>
-              <div className="simplePreviewLauncher">
+              <div className={`simplePreviewLauncher simplePreviewLauncher--${formSettings.launcherAnimation}`}>
                 {formSettings.launcherIcon ? <span>{formSettings.launcherIcon}</span> : null}
                 <strong>{formSettings.submitButtonLabel}</strong>
               </div>

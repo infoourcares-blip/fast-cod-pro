@@ -279,6 +279,53 @@
   font-size: 16px;
 }
 
+.simplePreviewLauncher--shaker {
+  animation: simpleLauncherShake 1.4s ease-in-out infinite;
+}
+
+.simplePreviewLauncher--bounce {
+  animation: simpleLauncherBounce 1.5s ease-in-out infinite;
+}
+
+.simplePreviewLauncher--pulse {
+  animation: simpleLauncherPulse 1.6s ease-in-out infinite;
+}
+
+@keyframes simpleLauncherShake {
+  0%, 72%, 100% {
+    transform: translateX(0);
+  }
+  78%, 90% {
+    transform: translateX(-4px);
+  }
+  84%, 96% {
+    transform: translateX(4px);
+  }
+}
+
+@keyframes simpleLauncherBounce {
+  0%, 70%, 100% {
+    transform: translateY(0);
+  }
+  82% {
+    transform: translateY(-8px);
+  }
+  92% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes simpleLauncherPulse {
+  0%, 70%, 100% {
+    transform: scale(1);
+    box-shadow: 0 14px 24px rgba(15, 23, 42, 0.16);
+  }
+  84% {
+    transform: scale(1.035);
+    box-shadow: 0 18px 34px rgba(15, 23, 42, 0.24);
+  }
+}
+
 .simplePreviewHeader {
   min-height: 54px;
   display: grid;

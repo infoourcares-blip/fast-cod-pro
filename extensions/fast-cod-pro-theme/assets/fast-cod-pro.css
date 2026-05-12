@@ -129,6 +129,51 @@
   margin-top: 0;
 }
 
+.fast-cod-pro-launcher--shaker {
+  animation: fastCodProLauncherShake 1.4s ease-in-out infinite;
+}
+
+.fast-cod-pro-launcher--bounce {
+  animation: fastCodProLauncherBounce 1.5s ease-in-out infinite;
+}
+
+.fast-cod-pro-launcher--pulse {
+  animation: fastCodProLauncherPulse 1.6s ease-in-out infinite;
+}
+
+@keyframes fastCodProLauncherShake {
+  0%, 72%, 100% {
+    transform: translateX(0);
+  }
+  78%, 90% {
+    transform: translateX(-4px);
+  }
+  84%, 96% {
+    transform: translateX(4px);
+  }
+}
+
+@keyframes fastCodProLauncherBounce {
+  0%, 70%, 100% {
+    transform: translateY(0);
+  }
+  82% {
+    transform: translateY(-8px);
+  }
+  92% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes fastCodProLauncherPulse {
+  0%, 70%, 100% {
+    transform: scale(1);
+  }
+  84% {
+    transform: scale(1.035);
+  }
+}
+
 .fast-cod-pro-launcher-icon {
   font-size: 20px;
   line-height: 1;
