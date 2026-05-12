@@ -226,7 +226,10 @@
   font-size: 14px;
   font-weight: 850;
   text-decoration: none;
+  text-align: center;
+  line-height: 1.2;
   cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, color 160ms ease, transform 160ms ease;
 }
 
 .simplePrimary {
@@ -235,14 +238,28 @@
 }
 
 .simpleSecondary {
-  border: 1px solid #dbe3ed;
-  background: #ffffff;
-  color: #0f172a;
+  border: 1px solid #cfe1f2;
+  background: #f4fbff;
+  color: #0f334a;
+  box-shadow: 0 8px 18px rgba(15, 51, 74, 0.06);
 }
 
 .simpleDanger {
+  border: 1px solid #fecdd3;
   background: #fff1f2;
   color: #be123c;
+}
+
+.simplePrimary:hover,
+.simpleSecondary:hover,
+.simpleDanger:hover {
+  transform: translateY(-1px);
+}
+
+.simpleSecondary:hover {
+  background: #eaf7ff;
+  border-color: #a9d5ee;
+  box-shadow: 0 10px 22px rgba(15, 51, 74, 0.1);
 }
 
 .simplePrimary:disabled,
@@ -758,16 +775,29 @@
   font-size: 14px;
   font-weight: 850;
   text-decoration: none;
+  text-align: center;
+  line-height: 1.2;
   cursor: pointer;
   box-shadow: 0 12px 28px rgba(15, 118, 110, 0.2);
+  transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
 
 .proButtonSecondary,
 .proButtonSecondary:visited {
-  border: 1px solid var(--pro-line);
-  background: #ffffff;
-  color: var(--pro-text);
-  box-shadow: none;
+  border: 1px solid #cfe1f2;
+  background: #f4fbff;
+  color: #0f334a;
+  box-shadow: 0 8px 18px rgba(15, 51, 74, 0.06);
+}
+
+.proButton:hover {
+  transform: translateY(-1px);
+}
+
+.proButtonSecondary:hover {
+  background: #eaf7ff;
+  border-color: #a9d5ee;
+  box-shadow: 0 10px 22px rgba(15, 51, 74, 0.1);
 }
 
 .proInlineLink,
@@ -1920,14 +1950,23 @@
 .linkButton,
 .fullWidthButton {
   min-height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   padding: 0 18px;
-  border-radius: 16px;
-  border: 1px solid rgba(148, 163, 184, 0.3);
-  background: #fff;
-  color: #0f172a;
+  border-radius: 14px;
+  border: 1px solid #cfe1f2;
+  background: #f4fbff;
+  color: #0f334a;
   font: inherit;
   font-weight: 800;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
   cursor: pointer;
+  box-shadow: 0 8px 18px rgba(15, 51, 74, 0.06);
+  transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
 
 .videoButton {
@@ -1938,8 +1977,19 @@
   backdrop-filter: blur(10px);
 }
 
+.ghostButton:hover,
+.linkButton:hover,
+.fullWidthButton:hover {
+  transform: translateY(-1px);
+  border-color: #a9d5ee;
+  background: #eaf7ff;
+  box-shadow: 0 10px 22px rgba(15, 51, 74, 0.1);
+}
+
 .ghostButtonAccent {
-  color: #16a34a;
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+  color: #166534;
 }
 
 .fullWidthButton {
@@ -3176,27 +3226,51 @@
 .secondaryButton,
 .dangerButton {
   min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   padding: 0 16px;
   border: 0;
-  border-radius: 999px;
+  border-radius: 14px;
   font: inherit;
-  font-weight: 700;
+  font-weight: 800;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
   cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
 
 .primaryButton {
-  background: #1d4ed8;
+  background: #0f766e;
   color: #fff;
+  box-shadow: 0 10px 22px rgba(15, 118, 110, 0.16);
 }
 
 .secondaryButton {
-  background: #e2e8f0;
-  color: #0f172a;
+  border: 1px solid #cfe1f2;
+  background: #f4fbff;
+  color: #0f334a;
+  box-shadow: 0 8px 18px rgba(15, 51, 74, 0.06);
 }
 
 .dangerButton {
+  border: 1px solid #fecdd3;
   background: #fee2e2;
   color: #b91c1c;
+}
+
+.primaryButton:hover,
+.secondaryButton:hover,
+.dangerButton:hover {
+  transform: translateY(-1px);
+}
+
+.secondaryButton:hover {
+  background: #eaf7ff;
+  border-color: #a9d5ee;
+  box-shadow: 0 10px 22px rgba(15, 51, 74, 0.1);
 }
 
 .successText,
