@@ -127,6 +127,16 @@ export default function BuilderRoute() {
   const actionData = useActionData<ActionData>();
   const activeFields = fields.filter((field) => field.active);
   const previewFields = activeFields.length ? activeFields : fields;
+  const previewAmount = "INR 1.00";
+
+  const getFieldIcon = (fieldKey: string) => {
+    if (fieldKey === "customerName") return "👤";
+    if (fieldKey === "phone") return "☎";
+    if (fieldKey === "address1") return "📍";
+    if (fieldKey === "city") return "🏙";
+    if (fieldKey === "pincode") return "#";
+    return "";
+  };
 
   return (
     <s-page heading="COD Form">
@@ -215,19 +225,65 @@ export default function BuilderRoute() {
               ["--simple-button-text" as string]: profile.buttonTextColor,
               ["--simple-radius" as string]: `${profile.borderRadius}px`,
             }}>
-              <h3>{profile.formTitle}</h3>
-              <p>{profile.formSubtitle}</p>
-              {previewFields.slice(0, 5).map((field) => (
-                <div className="simplePreviewInput" key={field.id}>
-                  {field.placeholder || field.label}
-                  {field.required ? <span>*</span> : null}
+              <div className="simplePreviewHeader">
+                <span className="simplePreviewHome">⌂</span>
+                <div>
+                  <strong>FAST COD PRO</strong>
+                  <span>{profile.formSubtitle}</span>
                 </div>
-              ))}
-              <div className="simplePreviewSummary">
-                <span>Total</span>
-                <strong>{profile.defaultCurrency} 999.00</strong>
+                <span className="simplePreviewClose">×</span>
               </div>
-              <button type="button">{profile.submitButtonLabel}</button>
+
+              <div className="simplePreviewBody">
+                <div className="simplePreviewProduct">
+                  <div className="simplePreviewThumb" />
+                  <div className="simplePreviewProductMeta">
+                    <span>ORDER SUMMARY</span>
+                    <strong>t shirt</strong>
+                    <b>₹1.00</b>
+                    <div className="simplePreviewQty">
+                      <span>-</span>
+                      <strong>1</strong>
+                      <span>+</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="simplePreviewPayment">
+                  <span>PAYMENT OVERVIEW</span>
+                  <div>
+                    <small>Subtotal</small>
+                    <strong>{previewAmount}</strong>
+                  </div>
+                  <div>
+                    <small>Shipping</small>
+                    <strong>Free</strong>
+                  </div>
+                  <div className="simplePreviewTotal">
+                    <small>Total</small>
+                    <strong>{previewAmount}</strong>
+                  </div>
+                </div>
+
+                <h3>{profile.formTitle}</h3>
+                {previewFields.slice(0, 5).map((field) => (
+                  <label className="simplePreviewField" key={field.id}>
+                    <span>
+                      {field.label}
+                      {field.required ? <em>*</em> : null}
+                    </span>
+                    <div className="simplePreviewInput">
+                      <b>{getFieldIcon(field.fieldKey)}</b>
+                      <small>{field.placeholder || field.label}</small>
+                    </div>
+                  </label>
+                ))}
+                <button type="button">
+                  {profile.submitButtonLabel.includes("Order")
+                    ? `${profile.submitButtonLabel} - ${previewAmount}`
+                    : `${profile.submitButtonLabel}`}
+                </button>
+              </div>
             </div>
           </section>
         </div>
