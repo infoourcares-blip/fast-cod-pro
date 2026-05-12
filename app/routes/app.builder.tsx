@@ -1,5 +1,6 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { Form, Link, useActionData, useLoaderData } from "react-router";
+import { useState } from "react";
 import prisma from "../db.server";
 import { getFunnelProfile } from "../lib/funnel.server";
 import { authenticate } from "../shopify.server";
@@ -128,6 +129,21 @@ export default function BuilderRoute() {
   const activeFields = fields.filter((field) => field.active);
   const previewFields = activeFields.length ? activeFields : fields;
   const previewAmount = "INR 1.00";
+  const [formSettings, setFormSettings] = useState({
+    formTitle: profile.formTitle,
+    formSubtitle: profile.formSubtitle,
+    submitButtonLabel: profile.submitButtonLabel,
+    successMessage: profile.successMessage,
+    buttonBgColor: profile.buttonBgColor,
+    buttonTextColor: profile.buttonTextColor,
+    themeColor: profile.themeColor,
+    borderRadius: String(profile.borderRadius),
+    collectAddress: profile.collectAddress
+  });
+
+  const updateSetting = (key: keyof typeof formSettings, value: string | boolean) => {
+    setFormSettings((current) => ({ ...current, [key]: value }));
+  };
 
   const getFieldIcon = (fieldKey: string) => {
     if (fieldKey === "customerName") return "👤";
@@ -166,43 +182,81 @@ export default function BuilderRoute() {
 
             <label className="simpleField">
               <span>Form title</span>
-              <input name="formTitle" defaultValue={profile.formTitle} />
+              <input
+                name="formTitle"
+                value={formSettings.formTitle}
+                onChange={(event) => updateSetting("formTitle", event.currentTarget.value)}
+              />
             </label>
 
             <label className="simpleField">
               <span>Subtitle</span>
-              <input name="formSubtitle" defaultValue={profile.formSubtitle} />
+              <input
+                name="formSubtitle"
+                value={formSettings.formSubtitle}
+                onChange={(event) => updateSetting("formSubtitle", event.currentTarget.value)}
+              />
             </label>
 
             <label className="simpleField">
               <span>Button text</span>
-              <input name="submitButtonLabel" defaultValue={profile.submitButtonLabel} />
+              <input
+                name="submitButtonLabel"
+                value={formSettings.submitButtonLabel}
+                onChange={(event) => updateSetting("submitButtonLabel", event.currentTarget.value)}
+              />
             </label>
 
             <label className="simpleField">
               <span>Success message</span>
-              <input name="successMessage" defaultValue={profile.successMessage} />
+              <input
+                name="successMessage"
+                value={formSettings.successMessage}
+                onChange={(event) => updateSetting("successMessage", event.currentTarget.value)}
+              />
             </label>
 
             <div className="simpleTwo">
               <label className="simpleField">
                 <span>Button color</span>
-                <input type="color" name="buttonBgColor" defaultValue={profile.buttonBgColor} />
+                <input
+                  type="color"
+                  name="buttonBgColor"
+                  value={formSettings.buttonBgColor}
+                  onChange={(event) => updateSetting("buttonBgColor", event.currentTarget.value)}
+                />
               </label>
               <label className="simpleField">
                 <span>Text color</span>
-                <input type="color" name="buttonTextColor" defaultValue={profile.buttonTextColor} />
+                <input
+                  type="color"
+                  name="buttonTextColor"
+                  value={formSettings.buttonTextColor}
+                  onChange={(event) => updateSetting("buttonTextColor", event.currentTarget.value)}
+                />
               </label>
             </div>
 
             <div className="simpleTwo">
               <label className="simpleField">
                 <span>Accent color</span>
-                <input type="color" name="themeColor" defaultValue={profile.themeColor} />
+                <input
+                  type="color"
+                  name="themeColor"
+                  value={formSettings.themeColor}
+                  onChange={(event) => updateSetting("themeColor", event.currentTarget.value)}
+                />
               </label>
               <label className="simpleField">
                 <span>Corner roundness</span>
-                <input type="number" min="8" max="28" name="borderRadius" defaultValue={profile.borderRadius} />
+                <input
+                  type="number"
+                  min="8"
+                  max="28"
+                  name="borderRadius"
+                  value={formSettings.borderRadius}
+                  onChange={(event) => updateSetting("borderRadius", event.currentTarget.value)}
+                />
               </label>
             </div>
 
@@ -210,7 +264,12 @@ export default function BuilderRoute() {
             <input type="hidden" name="launcherTextColor" value={profile.launcherTextColor} />
 
             <label className="simpleCheck">
-              <input type="checkbox" name="collectAddress" defaultChecked={profile.collectAddress} />
+              <input
+                type="checkbox"
+                name="collectAddress"
+                checked={formSettings.collectAddress}
+                onChange={(event) => updateSetting("collectAddress", event.currentTarget.checked)}
+              />
               <span>Ask customer for address</span>
             </label>
           </Form>
@@ -221,15 +280,16 @@ export default function BuilderRoute() {
               <span className="simplePill">{activeFields.length} active fields</span>
             </div>
             <div className="simplePreview" style={{
-              ["--simple-button-bg" as string]: profile.buttonBgColor,
-              ["--simple-button-text" as string]: profile.buttonTextColor,
-              ["--simple-radius" as string]: `${profile.borderRadius}px`,
+              ["--simple-button-bg" as string]: formSettings.buttonBgColor,
+              ["--simple-button-text" as string]: formSettings.buttonTextColor,
+              ["--simple-accent" as string]: formSettings.themeColor,
+              ["--simple-radius" as string]: `${formSettings.borderRadius || 18}px`,
             }}>
               <div className="simplePreviewHeader">
                 <span className="simplePreviewHome">⌂</span>
                 <div>
                   <strong>FAST COD PRO</strong>
-                  <span>{profile.formSubtitle}</span>
+                  <span>{formSettings.formSubtitle}</span>
                 </div>
                 <span className="simplePreviewClose">×</span>
               </div>
@@ -265,7 +325,7 @@ export default function BuilderRoute() {
                   </div>
                 </div>
 
-                <h3>{profile.formTitle}</h3>
+                <h3>{formSettings.formTitle}</h3>
                 {previewFields.slice(0, 5).map((field) => (
                   <label className="simplePreviewField" key={field.id}>
                     <span>
@@ -279,9 +339,9 @@ export default function BuilderRoute() {
                   </label>
                 ))}
                 <button type="button">
-                  {profile.submitButtonLabel.includes("Order")
-                    ? `${profile.submitButtonLabel} - ${previewAmount}`
-                    : `${profile.submitButtonLabel}`}
+                  {formSettings.submitButtonLabel.includes("Order")
+                    ? `${formSettings.submitButtonLabel} - ${previewAmount}`
+                    : `${formSettings.submitButtonLabel}`}
                 </button>
               </div>
             </div>

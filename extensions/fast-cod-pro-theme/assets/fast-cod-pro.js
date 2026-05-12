@@ -190,7 +190,7 @@
     quantityDisplay.value = String(quantity);
     subtotal.textContent = amount;
     total.textContent = amount;
-    submitButton.textContent = "Place Fast COD Pro Order - " + amount;
+    submitButton.textContent = (container.dataset.submitButtonLabel || "Place Fast COD Pro Order") + " - " + amount;
   }
 
   function applyProductData(container, product) {
@@ -276,6 +276,7 @@
 
       if (title) title.textContent = formConfig.title || "Fast COD Pro order form";
       if (subtitle) subtitle.textContent = formConfig.subtitle || "Fast cash-on-delivery checkout";
+      container.dataset.submitButtonLabel = formConfig.submitButtonLabel || "Place Fast COD Pro Order";
       if (launcherLabel) launcherLabel.textContent = formConfig.submitButtonLabel || "Order with Fast COD Pro";
       if (status) status.textContent = "";
       applyDesign(container, formConfig.design, accentColor);
