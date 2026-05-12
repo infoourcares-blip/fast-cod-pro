@@ -5,18 +5,13 @@ export const loader = async () => {
   const whatsappUrl =
     process.env.SUPPORT_WHATSAPP_URL?.trim() ||
     "https://wa.me/919718127346?text=Hi%20Fast%20COD%20Pro%20support%2C%20I%20need%20help%20with%20my%20Shopify%20app.";
-  const tutorialUrl = process.env.SUPPORT_TUTORIAL_URL?.trim() || "";
 
-  return { supportEmail, whatsappUrl, tutorialUrl };
+  return { supportEmail, whatsappUrl };
 };
 
 export default function SupportRoute() {
-  const { supportEmail, whatsappUrl, tutorialUrl } = useLoaderData<typeof loader>();
-  const supportSubject = "Fast COD Pro support request";
-  const supportBody = encodeURIComponent(
-    "Store URL:\nProduct page URL:\nIssue:\nSteps to reproduce:\n"
-  );
-  const mailHref = `mailto:${supportEmail}?subject=${encodeURIComponent(supportSubject)}&body=${supportBody}`;
+  const { supportEmail, whatsappUrl } = useLoaderData<typeof loader>();
+  const mailHref = `mailto:${supportEmail}`;
 
   return (
     <main className="legalPage">
@@ -32,11 +27,6 @@ export default function SupportRoute() {
           <a className="legalButton legalButtonPrimary" href={mailHref}>
             Email support
           </a>
-          {tutorialUrl ? (
-            <a className="legalButton legalButtonSecondary" href={tutorialUrl} target="_blank" rel="noreferrer">
-              Watch tutorial
-            </a>
-          ) : null}
           {whatsappUrl ? (
             <a className="legalButton legalButtonSecondary" href={whatsappUrl} target="_blank" rel="noreferrer">
               WhatsApp support
@@ -49,23 +39,6 @@ export default function SupportRoute() {
           <p>
             Email: <a href={mailHref}>{supportEmail}</a>
           </p>
-        </section>
-
-        <section className="legalSection" id="tutorial">
-          <h2>Video tutorial</h2>
-          {tutorialUrl ? (
-            <p>
-              Watch the setup walkthrough here:{" "}
-              <a href={tutorialUrl} target="_blank" rel="noreferrer">
-                Open tutorial
-              </a>
-              .
-            </p>
-          ) : (
-            <div className="legalNotice">
-              Tutorial video is being added. For now, use the setup checklist below or email support with your store URL.
-            </div>
-          )}
         </section>
 
         <section className="legalSection" id="whatsapp">

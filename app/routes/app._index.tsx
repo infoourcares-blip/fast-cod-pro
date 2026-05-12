@@ -124,7 +124,7 @@ export default function DashboardRoute() {
   const themeEditorUrl = shopHandle
     ? `https://admin.shopify.com/store/${shopHandle}/themes/current/editor?context=apps`
     : null;
-  const { supportEmail, tutorialUrl, whatsappSupportUrl } = supportLinks;
+  const { supportEmail, whatsappSupportUrl } = supportLinks;
   const supportSubject = encodeURIComponent(
     `Fast COD Pro support for ${shop?.myshopifyDomain ?? "merchant store"}`
   );
@@ -331,10 +331,7 @@ export default function DashboardRoute() {
               </div>
             </div>
             <div className="proButtonRow">
-              <a className="proButton proButtonSecondary" href={tutorialUrl} target="_blank" rel="noreferrer">
-                Watch tutorial
-              </a>
-              <a className="proButton proButtonSecondary" href={supportMailHref}>
+              <a className="proButton proButtonSecondary" href={supportMailHref} target="_top" rel="noreferrer">
                 Contact support
               </a>
               {whatsappSupportUrl ? (
