@@ -504,114 +504,6 @@ async function getRestOrderStatusUrl(shop: string, accessToken: string, orderId:
   }
 }
 
-async function findRestCustomerId({
-  shop,
-  accessToken,
-  phone
-}: {
-  shop: string;
-  accessToken: string;
-  phone: string;
-}) {
-  const queries = [
-    phone ? `phone:${phone}` : "",
-    phone ? phone : "",
-    phone ? phone.replace(/\D/g, "").slice(-10) : ""
-  ].filter(Boolean);
-
-  for (const query of queries) {
-    try {
-      const response = await fetch(
-        `https://${shop}/admin/api/2026-04/customers/search.json?query=${encodeURIComponent(query)}&limit=1`,
-        {
-          headers: {
-            Accept: "application/json",
-            "X-Shopify-Access-Token": accessToken
-          }
-        }
-      );
-      const payload = (await response.json()) as {
-        customers?: Array<{ id?: number | string | null }>;
-      };
-      const customerId = payload.customers?.[0]?.id;
-
-      if (response.ok && customerId) {
-        return Number(customerId);
-      }
-    } catch (error) {
-      console.error("Fast COD Pro customer lookup failed", {
-        shop,
-        query,
-        error: error instanceof Error ? error.message : String(error)
-      });
-    }
-  }
-
-  return null;
-}
-
-async function createRestCustomerId({
-  shop,
-  accessToken,
-  customerName,
-  phone,
-  address
-}: {
-  shop: string;
-  accessToken: string;
-  customerName: string;
-  phone: string;
-  address: Record<string, string>;
-}) {
-  const { firstName, lastName } = splitCustomerName(customerName);
-
-  try {
-    const response = await fetch(`https://${shop}/admin/api/2026-04/customers.json`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        "X-Shopify-Access-Token": accessToken
-      },
-      body: JSON.stringify({
-        customer: {
-          first_name: firstName,
-          last_name: lastName || "-",
-          phone,
-          verified_email: false,
-          addresses: [address],
-          default_address: address
-        }
-      })
-    });
-    const text = await response.text();
-    let payload: { customer?: { id?: number | string | null }; errors?: unknown } = {};
-
-    try {
-      payload = JSON.parse(text);
-    } catch (_error) {
-      payload = {};
-    }
-
-    if (response.ok && payload.customer?.id) {
-      return Number(payload.customer.id);
-    }
-
-    console.error("Fast COD Pro customer create failed", {
-      shop,
-      status: response.status,
-      error: text.slice(0, 500)
-    });
-  } catch (error) {
-    console.error("Fast COD Pro customer create request failed", {
-      shop,
-      error: error instanceof Error ? error.message : String(error)
-    });
-  }
-
-  return null;
-}
-
 async function createOrderDirectly({
   admin,
   shop,
@@ -820,21 +712,6 @@ async function createRestOrderDirectly({
     country: "India",
     country_code: "IN"
   };
-  const existingCustomerId = await findRestCustomerId({
-    shop,
-    accessToken,
-    phone
-  });
-  const createdCustomerId = existingCustomerId
-    ? null
-    : await createRestCustomerId({
-        shop,
-        accessToken,
-        customerName,
-        phone,
-        address
-      });
-  const customerId = existingCustomerId || createdCustomerId;
   const response = await fetch(`https://${shop}/admin/api/2026-04/orders.json`, {
     method: "POST",
     headers: {
@@ -844,7 +721,6 @@ async function createRestOrderDirectly({
     body: JSON.stringify({
       order: {
         phone,
-        customer: customerId ? { id: customerId } : undefined,
         contact_email: undefined,
         financial_status: "pending",
         gateway: "Cash on Delivery (COD)",
