@@ -32,7 +32,7 @@ type SubmissionContext = {
   tokenIssue?: string;
 };
 
-const SUBMIT_BUILD_ID = "cod-submit-2026-05-13-fast-phone-customer-1";
+const SUBMIT_BUILD_ID = "cod-submit-2026-05-13-fast-submit-1";
 const FREE_ORDER_LIMIT = 100;
 const OFFLINE_TOKEN_REFRESH_WINDOW_MS = 5 * 60 * 1000;
 const TOKEN_EXCHANGE_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:token-exchange";
@@ -642,7 +642,7 @@ async function createRestPhoneCustomer({
   }
 
   if (response.ok && payload.customer?.id) {
-    return Number(payload.customer.id);
+    return { id: Number(payload.customer.id), error: "" };
   }
 
   console.error("Fast COD Pro phone customer create failed", {
@@ -651,7 +651,7 @@ async function createRestPhoneCustomer({
     responseText: responseText.slice(0, 700)
   });
 
-  return null;
+  return { id: null, error: responseText };
 }
 
 async function createOrderDirectly({
@@ -889,17 +889,19 @@ async function createRestOrderDirectly({
     country: "India",
     country_code: "IN"
   };
-  const foundPhoneCustomer = await findRestCustomerByPhone({ shop, accessToken, phone });
-  const phoneCustomerId =
-    foundPhoneCustomer && !foundPhoneCustomer.email
-      ? foundPhoneCustomer.id
-      : await createRestPhoneCustomer({
-          shop,
-          accessToken,
-          customerName,
-          phone,
-          address
-        });
+  const createdPhoneCustomer = await createRestPhoneCustomer({
+    shop,
+    accessToken,
+    customerName,
+    phone,
+    address
+  });
+  let phoneCustomerId = createdPhoneCustomer.id;
+
+  if (!phoneCustomerId && /already been taken|phone/i.test(createdPhoneCustomer.error)) {
+    const foundPhoneCustomer = await findRestCustomerByPhone({ shop, accessToken, phone });
+    phoneCustomerId = foundPhoneCustomer && !foundPhoneCustomer.email ? foundPhoneCustomer.id : null;
+  }
   const buildOrderBody = (useCustomerId: boolean) => ({
       order: {
         phone,
@@ -1228,10 +1230,9 @@ async function handleSubmission(
       );
     }
 
-    const [monthlySubmissionCount, hasUnlimitedPlan] = await Promise.all([
-      getMonthlySubmissionCount(session.shop),
-      hasActiveUnlimitedPlan(admin)
-    ]);
+    const monthlySubmissionCount = await getMonthlySubmissionCount(session.shop);
+    const hasUnlimitedPlan =
+      monthlySubmissionCount >= FREE_ORDER_LIMIT ? await hasActiveUnlimitedPlan(admin) : false;
 
     if (!hasUnlimitedPlan && monthlySubmissionCount >= FREE_ORDER_LIMIT) {
       return storefrontResponse(
@@ -1554,7 +1555,7 @@ async function handleSubmission(
       );
     }
 
-    await prisma.codSubmission.create({
+    const submissionLog = prisma.codSubmission.create({
       data: {
         funnelProfileId: profile.id,
         shop: session.shop,
@@ -1579,6 +1580,12 @@ async function handleSubmission(
           draftError
         })
       }
+    });
+    void submissionLog.catch((error) => {
+      console.error("Fast COD Pro submission log failed", {
+        shop: session.shop,
+        error: error instanceof Error ? error.message : String(error)
+      });
     });
 
     if (!completedOrder?.id) {
