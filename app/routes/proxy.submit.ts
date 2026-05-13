@@ -32,7 +32,7 @@ type SubmissionContext = {
   tokenIssue?: string;
 };
 
-const SUBMIT_BUILD_ID = "cod-submit-2026-05-13-contact-phone-2";
+const SUBMIT_BUILD_ID = "cod-submit-2026-05-13-graphql-phone-contact-1";
 const FREE_ORDER_LIMIT = 100;
 const OFFLINE_TOKEN_REFRESH_WINDOW_MS = 5 * 60 * 1000;
 const TOKEN_EXCHANGE_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:token-exchange";
@@ -517,7 +517,8 @@ async function createOrderDirectly({
   rawVariantId,
   variantId,
   quantity,
-  price
+  price,
+  currencyCode
 }: {
   admin: AdminClient;
   shop: string;
@@ -532,32 +533,14 @@ async function createOrderDirectly({
   variantId: string;
   quantity: number;
   price: number;
+  currencyCode: string;
 }) {
   const { firstName, lastName } = splitCustomerName(customerName);
   const postalCode = inferPostalCode(pincode, address1);
   const cleanAddress1 = cleanAddressLine(address1, postalCode, city);
   const cleanCity = cleanCityName(city, postalCode);
   const addressText = visibleAddress(cleanAddress1, cleanCity, postalCode);
-
-  if (accessToken) {
-    const restOrderResult = await createRestOrderDirectly({
-      shop,
-      accessToken,
-      customerName,
-      phone,
-      address1,
-      city,
-      pincode,
-      notes,
-      rawVariantId,
-      quantity,
-      price
-    });
-
-    if (restOrderResult.order?.id) {
-      return restOrderResult;
-    }
-  }
+  const totalAmount = moneyAmount(price * Math.max(1, quantity));
 
   const response = await admin.graphql(
     `#graphql
@@ -587,6 +570,24 @@ async function createOrderDirectly({
             .filter(Boolean)
             .join("\n"),
           tags: ["Fast COD Pro", "Cash on Delivery"],
+          financialStatus: "PENDING",
+          transactions: [
+            {
+              kind: "SALE",
+              status: "PENDING",
+              gateway: "Cash on Delivery (COD)",
+              amountSet: {
+                shopMoney: {
+                  amount: totalAmount,
+                  currencyCode
+                },
+                presentmentMoney: {
+                  amount: totalAmount,
+                  currencyCode
+                }
+              }
+            }
+          ],
           lineItems: [
             {
               variantId,
@@ -641,7 +642,12 @@ async function createOrderDirectly({
   const graphqlOrder = payload.data?.orderCreate?.order;
   if (graphqlOrder?.id) {
     return {
-      order: graphqlOrder,
+      order: {
+        ...graphqlOrder,
+        orderStatusUrl: accessToken
+          ? await getRestOrderStatusUrl(shop, accessToken, graphqlOrder.id)
+          : null
+      },
       error: ""
     };
   }
@@ -650,6 +656,31 @@ async function createOrderDirectly({
     payload.data?.orderCreate?.userErrors ?? [],
     payload.errors
   );
+
+  if (accessToken) {
+    const restOrderResult = await createRestOrderDirectly({
+      shop,
+      accessToken,
+      customerName,
+      phone,
+      address1,
+      city,
+      pincode,
+      notes,
+      rawVariantId,
+      quantity,
+      price
+    });
+
+    if (restOrderResult.order?.id) {
+      return restOrderResult;
+    }
+
+    return {
+      order: null,
+      error: [graphqlError, restOrderResult.error].filter(Boolean).join(" | ")
+    };
+  }
 
   return {
     order: null,
@@ -1100,7 +1131,8 @@ async function handleSubmission(
           rawVariantId,
           variantId,
           quantity,
-          price
+          price,
+          currencyCode: profile.defaultCurrency
         });
 
         if (directOrderResult.order?.id) {
@@ -1333,7 +1365,8 @@ async function handleSubmission(
                 rawVariantId,
                 variantId,
                 quantity,
-                price
+                price,
+                currencyCode: profile.defaultCurrency
               });
 
               if (directFallbackResult.order?.id) {
