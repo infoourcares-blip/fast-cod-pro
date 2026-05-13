@@ -274,6 +274,31 @@
     }
   }
 
+  function getFieldLabelText(field) {
+    var label = field.closest ? field.closest(".fast-cod-pro-field") : null;
+    var labelNode = label ? label.querySelector(".fast-cod-pro-label") : null;
+    return String((labelNode && labelNode.textContent) || "")
+      .replace("*", "")
+      .trim();
+  }
+
+  function canonicalFieldKey(field) {
+    var text = [
+      field.name,
+      getFieldLabelText(field),
+      field.placeholder
+    ].join(" ").toLowerCase();
+
+    if (/full\s*name|customer\s*name|\bname\b/.test(text)) return "customerName";
+    if (/phone|mobile|whatsapp|contact/.test(text)) return "phone";
+    if (/address|house|street|area|landmark/.test(text)) return "address1";
+    if (/city|town/.test(text)) return "city";
+    if (/pin\s*code|pincode|postal|zip/.test(text)) return "pincode";
+    if (/note|request|instruction/.test(text)) return "notes";
+    if (/email/.test(text)) return "email";
+    return "";
+  }
+
   async function enhanceFields(container, endpoint, accentColor) {
     try {
       var configUrl = new URL(endpoint, window.location.origin);
@@ -384,6 +409,10 @@
           return null;
         }
         if (field.name) body.append(field.name, field.value);
+        if (field.type !== "hidden" && String(field.value || "").trim()) {
+          var canonicalKey = canonicalFieldKey(field);
+          if (canonicalKey && !body.get(canonicalKey)) body.set(canonicalKey, field.value);
+        }
       }
 
       if (!body.get("shop")) body.append("shop", shopDomain);

@@ -1277,6 +1277,36 @@ async function handleSubmission(
               draftOrderId: draftOrder.id,
               draftError
             });
+            if (hasOrderCreateScopes(session.scope)) {
+              const directFallbackResult = await createOrderDirectly({
+                admin,
+                shop: session.shop,
+                accessToken: session.accessToken,
+                customerName,
+                phone,
+                email,
+                address1,
+                city,
+                pincode,
+                notes: [
+                  notes,
+                  "Draft order completion fallback used.",
+                  rawPhone && rawPhone !== phone ? `Original phone: ${rawPhone}` : ""
+                ]
+                  .filter(Boolean)
+                  .join("\n"),
+                rawVariantId,
+                variantId,
+                quantity
+              });
+
+              if (directFallbackResult.order?.id) {
+                completedOrder = directFallbackResult.order;
+                draftError = null;
+              } else if (directFallbackResult.error) {
+                draftError = `${draftError} | Direct fallback failed: ${directFallbackResult.error}`;
+              }
+            }
           } else {
             completedOrder = paidFallbackResult.order;
             draftError = null;
