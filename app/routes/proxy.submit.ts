@@ -32,7 +32,7 @@ type SubmissionContext = {
   tokenIssue?: string;
 };
 
-const SUBMIT_BUILD_ID = "cod-submit-2026-05-13-order-update-phone-1";
+const SUBMIT_BUILD_ID = "cod-submit-2026-05-13-phone-as-contact-1";
 const FREE_ORDER_LIMIT = 100;
 const OFFLINE_TOKEN_REFRESH_WINDOW_MS = 5 * 60 * 1000;
 const TOKEN_EXCHANGE_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:token-exchange";
@@ -581,6 +581,34 @@ async function createOrderDirectly({
   const addressText = visibleAddress(cleanAddress1, cleanCity, postalCode);
   const totalAmount = moneyAmount(price * Math.max(1, quantity));
 
+  if (accessToken) {
+    const restOrderResult = await createRestOrderDirectly({
+      shop,
+      accessToken,
+      customerName,
+      phone,
+      address1,
+      city,
+      pincode,
+      notes,
+      rawVariantId,
+      quantity,
+      price
+    });
+
+    if (restOrderResult.order?.id) {
+      const phoneUpdateError = await updateOrderContactPhone(admin, restOrderResult.order.id, phone);
+      if (phoneUpdateError) {
+        console.error("Fast COD Pro REST order phone update failed", {
+          orderId: restOrderResult.order.id,
+          phoneUpdateError
+        });
+      }
+
+      return restOrderResult;
+    }
+  }
+
   const response = await admin.graphql(
     `#graphql
       mutation FastCodProCreateOrder($order: OrderCreateOrderInput!) {
@@ -704,39 +732,6 @@ async function createOrderDirectly({
     payload.errors
   );
 
-  if (accessToken) {
-    const restOrderResult = await createRestOrderDirectly({
-      shop,
-      accessToken,
-      customerName,
-      phone,
-      address1,
-      city,
-      pincode,
-      notes,
-      rawVariantId,
-      quantity,
-      price
-    });
-
-    if (restOrderResult.order?.id) {
-      const phoneUpdateError = await updateOrderContactPhone(admin, restOrderResult.order.id, phone);
-      if (phoneUpdateError) {
-        console.error("Fast COD Pro REST order phone update failed", {
-          orderId: restOrderResult.order.id,
-          phoneUpdateError
-        });
-      }
-
-      return restOrderResult;
-    }
-
-    return {
-      order: null,
-      error: [graphqlError, restOrderResult.error].filter(Boolean).join(" | ")
-    };
-  }
-
   return {
     order: null,
     error:
@@ -791,8 +786,10 @@ async function createRestOrderDirectly({
     country: "India",
     country_code: "IN"
   };
-  const buildOrderBody = (includePhoneCustomer: boolean) => ({
+  const displayPhone = phone.replace(/^\+91/, "").replace(/^\+/, "");
+  const buildOrderBody = (includePhoneCustomer: boolean, usePhoneAsContact: boolean) => ({
       order: {
+        email: usePhoneAsContact ? displayPhone : undefined,
         phone,
         customer: includePhoneCustomer
           ? {
@@ -801,7 +798,7 @@ async function createRestOrderDirectly({
               phone
             }
           : undefined,
-        contact_email: undefined,
+        contact_email: usePhoneAsContact ? displayPhone : undefined,
         financial_status: "pending",
         gateway: "Cash on Delivery (COD)",
         payment_gateway_names: ["Cash on Delivery (COD)"],
@@ -855,17 +852,17 @@ async function createRestOrderDirectly({
       }
     });
 
-  const postOrder = (includePhoneCustomer: boolean) =>
+  const postOrder = (includePhoneCustomer: boolean, usePhoneAsContact: boolean) =>
     fetch(`https://${shop}/admin/api/2026-04/orders.json`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "X-Shopify-Access-Token": accessToken
       },
-      body: JSON.stringify(buildOrderBody(includePhoneCustomer))
+      body: JSON.stringify(buildOrderBody(includePhoneCustomer, usePhoneAsContact))
     });
 
-  let response = await postOrder(true);
+  let response = await postOrder(true, true);
   const responseText = await response.text();
   let payload: {
     order?: {
@@ -883,8 +880,30 @@ async function createRestOrderDirectly({
     payload = {};
   }
 
-  if (!response.ok && /customer|phone/i.test(responseText)) {
-    response = await postOrder(false);
+  if (!response.ok) {
+    response = await postOrder(true, false);
+    const retryResponseText = await response.text();
+
+    try {
+      payload = JSON.parse(retryResponseText);
+    } catch (_error) {
+      payload = {};
+    }
+  }
+
+  if (!response.ok && /customer|phone/i.test(JSON.stringify(payload))) {
+    response = await postOrder(false, true);
+    const retryResponseText = await response.text();
+
+    try {
+      payload = JSON.parse(retryResponseText);
+    } catch (_error) {
+      payload = {};
+    }
+  }
+
+  if (!response.ok) {
+    response = await postOrder(false, false);
     const retryResponseText = await response.text();
 
     try {
