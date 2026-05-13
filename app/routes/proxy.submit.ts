@@ -32,7 +32,7 @@ type SubmissionContext = {
   tokenIssue?: string;
 };
 
-const SUBMIT_BUILD_ID = "cod-submit-2026-05-13-phone-contact-1";
+const SUBMIT_BUILD_ID = "cod-submit-2026-05-13-contact-phone-2";
 const FREE_ORDER_LIMIT = 100;
 const OFFLINE_TOKEN_REFRESH_WINDOW_MS = 5 * 60 * 1000;
 const TOKEN_EXCHANGE_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:token-exchange";
@@ -705,15 +705,16 @@ async function createRestOrderDirectly({
     country: "India",
     country_code: "IN"
   };
-  const response = await fetch(`https://${shop}/admin/api/2026-04/orders.json`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Shopify-Access-Token": accessToken
-    },
-    body: JSON.stringify({
+  const buildOrderBody = (includePhoneCustomer: boolean) => ({
       order: {
         phone,
+        customer: includePhoneCustomer
+          ? {
+              first_name: firstName,
+              last_name: lastName || "-",
+              phone
+            }
+          : undefined,
         contact_email: undefined,
         financial_status: "pending",
         gateway: "Cash on Delivery (COD)",
@@ -766,8 +767,19 @@ async function createRestOrderDirectly({
           { name: "source", value: "fast_cod_pro_theme_form" }
         ].filter((item) => item.value)
       }
-    })
-  });
+    });
+
+  const postOrder = (includePhoneCustomer: boolean) =>
+    fetch(`https://${shop}/admin/api/2026-04/orders.json`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Shopify-Access-Token": accessToken
+      },
+      body: JSON.stringify(buildOrderBody(includePhoneCustomer))
+    });
+
+  let response = await postOrder(true);
   const responseText = await response.text();
   let payload: {
     order?: {
@@ -783,6 +795,24 @@ async function createRestOrderDirectly({
     payload = JSON.parse(responseText);
   } catch (_error) {
     payload = {};
+  }
+
+  if (!response.ok && /customer|phone/i.test(responseText)) {
+    response = await postOrder(false);
+    const retryResponseText = await response.text();
+
+    try {
+      payload = JSON.parse(retryResponseText);
+    } catch (_error) {
+      payload = {};
+    }
+
+    if (!response.ok) {
+      return {
+        order: null,
+        error: `REST order create failed. HTTP ${response.status}. ${retryResponseText.slice(0, 700)}`
+      };
+    }
   }
 
   if (response.ok && payload.order?.id) {
