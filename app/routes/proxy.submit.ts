@@ -568,6 +568,15 @@ async function createOrderDirectly({
             zip: postalCode,
             countryCode: "IN"
           },
+          billingAddress: {
+            firstName,
+            lastName,
+            address1: cleanAddress1,
+            city: cleanCity,
+            phone,
+            zip: postalCode,
+            countryCode: "IN"
+          },
           customAttributes: [
             { key: "customer_name", value: customerName },
             { key: "payment_method", value: "Cash on Delivery" },
@@ -671,6 +680,13 @@ async function createRestOrderDirectly({
       order: {
         email: email || undefined,
         phone,
+        customer: {
+          first_name: firstName,
+          last_name: lastName || "-",
+          email: email || undefined,
+          phone
+        },
+        contact_email: email || undefined,
         financial_status: "pending",
         fulfillment_status: null,
         inventory_behaviour: "decrement_ignoring_policy",
@@ -1059,17 +1075,24 @@ async function handleSubmission(
               note: [notes, rawPhone && rawPhone !== phone ? `Original phone: ${rawPhone}` : ""]
                 .filter(Boolean)
                 .join("\n") || undefined,
-              shippingAddress: profile.collectAddress
-                ? {
-                    firstName: splitCustomerName(customerName).firstName || undefined,
-                    lastName: splitCustomerName(customerName).lastName || undefined,
-                    address1: cleanAddress1 || undefined,
-                    city: cleanCity || undefined,
-                    phone: phone || undefined,
-                    zip: postalCode || undefined,
-                    countryCode: "IN"
-                  }
-                : undefined,
+              shippingAddress: {
+                firstName: splitCustomerName(customerName).firstName || undefined,
+                lastName: splitCustomerName(customerName).lastName || "-",
+                address1: cleanAddress1 || address1 || undefined,
+                city: cleanCity || city || undefined,
+                phone: phone || undefined,
+                zip: postalCode || undefined,
+                countryCode: "IN"
+              },
+              billingAddress: {
+                firstName: splitCustomerName(customerName).firstName || undefined,
+                lastName: splitCustomerName(customerName).lastName || "-",
+                address1: cleanAddress1 || address1 || undefined,
+                city: cleanCity || city || undefined,
+                phone: phone || undefined,
+                zip: postalCode || undefined,
+                countryCode: "IN"
+              },
               lineItems: [
                 {
                   variantId,
