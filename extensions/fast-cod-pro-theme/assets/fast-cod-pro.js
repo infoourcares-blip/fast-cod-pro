@@ -268,6 +268,24 @@
     }
   }
 
+  function getBodyValue(body, names) {
+    for (var i = 0; i < names.length; i += 1) {
+      var value = String(body.get(names[i]) || "").trim();
+      if (value) return value;
+    }
+    return "";
+  }
+
+  function splitCustomerName(fullName) {
+    var parts = String(fullName || "").trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return { firstName: "", lastName: "" };
+    if (parts.length === 1) return { firstName: parts[0], lastName: "-" };
+    return {
+      firstName: parts.slice(0, -1).join(" "),
+      lastName: parts[parts.length - 1]
+    };
+  }
+
   function getFieldLabel(field) {
     var label = field.closest ? field.closest(".fast-cod-pro-field") : null;
     var labelText = label ? label.querySelector(".fast-cod-pro-label") : null;
@@ -335,6 +353,87 @@
     }
 
     return response;
+  }
+
+  async function saveCheckoutAttributes(form, body) {
+    var properties = buildLineItemProperties(form);
+    var fullName = getBodyValue(body, ["customerName", "name", "fullName", "fullname"]);
+    var phone = getBodyValue(body, ["phone", "phoneNumber", "mobile", "mobileNumber", "alternatePhone"]);
+    var address = getBodyValue(body, ["address1", "address", "shippingAddress"]);
+    var city = getBodyValue(body, ["city"]);
+    var pincode = getBodyValue(body, ["pincode", "zip", "postalCode", "postcode"]);
+    var noteParts = [
+      fullName ? "Name: " + fullName : "",
+      phone ? "Phone: " + phone : "",
+      address ? "Address: " + address : "",
+      city ? "City: " + city : "",
+      pincode ? "Pincode: " + pincode : ""
+    ].filter(Boolean);
+
+    var attributes = Object.assign({}, properties, {
+      "Fast COD Pro form": "Completed",
+      "COD customer name": fullName,
+      "COD phone": phone,
+      "COD address": address,
+      "COD city": city,
+      "COD pincode": pincode
+    });
+
+    try {
+      await fetch("/cart/update.js", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json"
+        },
+        body: JSON.stringify({
+          note: noteParts.join("\n"),
+          attributes: attributes
+        })
+      });
+    } catch (error) {
+      console.error("Fast COD Pro cart attributes update failed", error);
+    }
+  }
+
+  function buildPrefilledCheckoutUrl(body) {
+    var fullName = getBodyValue(body, ["customerName", "name", "fullName", "fullname"]);
+    var name = splitCustomerName(fullName);
+    var phone = getBodyValue(body, ["phone", "phoneNumber", "mobile", "mobileNumber", "alternatePhone"]);
+    var email = getBodyValue(body, ["email"]);
+    var address = getBodyValue(body, ["address1", "address", "shippingAddress"]);
+    var address2 = getBodyValue(body, ["address2", "landmark", "apartment"]);
+    var city = getBodyValue(body, ["city"]);
+    var pincode = getBodyValue(body, ["pincode", "zip", "postalCode", "postcode"]);
+    var state = getBodyValue(body, ["province", "state"]);
+    var country = getBodyValue(body, ["country"]) || "India";
+    var params = new URLSearchParams();
+
+    if (email) params.set("checkout[email]", email);
+    if (phone) params.set("checkout[phone]", phone);
+    if (name.firstName) params.set("checkout[shipping_address][first_name]", name.firstName);
+    if (name.lastName) params.set("checkout[shipping_address][last_name]", name.lastName);
+    if (address) params.set("checkout[shipping_address][address1]", address);
+    if (address2) params.set("checkout[shipping_address][address2]", address2);
+    if (city) params.set("checkout[shipping_address][city]", city);
+    if (pincode) params.set("checkout[shipping_address][zip]", pincode);
+    if (state) params.set("checkout[shipping_address][province]", state);
+    if (country) params.set("checkout[shipping_address][country]", country);
+    if (phone) {
+      params.set("checkout[shipping_address][phone]", phone);
+      params.set("checkout[billing_address][phone]", phone);
+    }
+    if (name.firstName) params.set("checkout[billing_address][first_name]", name.firstName);
+    if (name.lastName) params.set("checkout[billing_address][last_name]", name.lastName);
+    if (address) params.set("checkout[billing_address][address1]", address);
+    if (address2) params.set("checkout[billing_address][address2]", address2);
+    if (city) params.set("checkout[billing_address][city]", city);
+    if (pincode) params.set("checkout[billing_address][zip]", pincode);
+    if (state) params.set("checkout[billing_address][province]", state);
+    if (country) params.set("checkout[billing_address][country]", country);
+
+    var query = params.toString();
+    return query ? "/checkout?" + query : "/checkout";
   }
 
   async function enhanceFields(container, endpoint, accentColor) {
@@ -502,9 +601,10 @@
         await fetchProductData(container);
         body.set("variantId", container.dataset.variantId || body.get("variantId") || "");
         await addToCartForShopifyCheckout(container, form, body);
+        await saveCheckoutAttributes(form, body);
         status.textContent = "Opening secure Shopify Checkout...";
         status.style.color = "#047857";
-        window.location.href = "/checkout";
+        window.location.href = buildPrefilledCheckoutUrl(body);
       } catch (error) {
         status.textContent = error && error.message ? error.message : "Could not submit COD order. Please try again.";
         status.style.color = "#b91c1c";
