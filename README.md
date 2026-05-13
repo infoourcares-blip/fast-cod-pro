@@ -7,11 +7,11 @@ It now includes:
 - Shopify embedded app authentication and App Bridge
 - Prisma-backed session storage
 - A custom Fast COD Pro merchant dashboard
-- Product-page COD form settings
+- Product-page Shopify Checkout button settings
 - Public legal pages for privacy, terms, support, and data deletion
 - Shopify privacy webhook handlers and uninstall cleanup
-- Orders Queue with search, filters, export, and status updates
-- Shopify Orders creation for COD submissions
+- Legacy Orders Queue for old captured submissions
+- Shopify Checkout redirect flow for new storefront orders
 - Simple Shopify Billing plans: Free and Unlimited
 
 ## Stack
@@ -56,16 +56,15 @@ When you run `npm run dev`, Shopify CLI will connect the app, create a tunnel, a
 
 Fast COD Pro is positioned as a simple conversion app for COD-first stores:
 
-- Product-page COD launcher and popup form
-- Customer name, phone, address, city, and notes capture
-- Direct Shopify Order creation with payment pending and COD tags
-- Orders Queue for COD submission tracking and CSV export
-- Free plan with 100 monthly COD orders
-- Unlimited plan for stores that need no order limit
+- Product-page checkout launcher button
+- Customer name, phone, address, and payment details collected inside Shopify Checkout
+- No Admin API order creation and no offsite checkout
+- Theme controls for button label, color, icon, animation, and corner radius
+- Free and Unlimited plans for storefront button controls
 
 ## Recommended next product steps
 
-1. Get Shopify approval for protected customer data submitted through COD forms.
+1. Keep the storefront flow inside Shopify Checkout for App Store compliance.
 2. Keep production URLs pointed at `https://app.fastcodpro.com`.
 3. Rotate any exposed Shopify app secret before final submission.
 4. Run end-to-end QA on storefront themes and mobile devices.

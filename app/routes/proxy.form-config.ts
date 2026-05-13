@@ -46,10 +46,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   return Response.json({
     form: {
-      title: profile.formTitle,
-      subtitle: profile.formSubtitle,
-      submitButtonLabel: profile.submitButtonLabel,
-      formButtonLabel: profile.formButtonLabel,
+      title: "Shopify Checkout",
+      subtitle: "Customer details and COD payment are completed in Shopify Checkout.",
+      submitButtonLabel: "Continue to Shopify Checkout",
+      formButtonLabel: "Continue to Shopify Checkout",
       successMessage: profile.successMessage,
       themeColor: profile.themeColor,
       collectAddress: profile.collectAddress,

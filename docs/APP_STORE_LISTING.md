@@ -2,76 +2,54 @@
 
 ## One-line value proposition
 
-Fast COD Pro helps COD-first Shopify stores replace checkout friction with a fast COD launcher, popup form, Shopify order creation, order queue, and CSV exports.
+Fast COD Pro helps COD-first Shopify stores add a branded product-page button that sends shoppers to secure Shopify Checkout.
 
 ## Short description
 
-Launch a branded cash-on-delivery flow with popup COD forms, direct Shopify order creation, queue management, and exports.
+Launch a configurable storefront checkout button for cash-on-delivery stores while keeping customer details, payment selection, and order creation inside Shopify Checkout.
 
 ## Full description
 
-Fast COD Pro is built for merchants who want a cleaner cash-on-delivery buying experience than the standard checkout. Add a storefront COD launcher button, collect delivery details in a focused popup, create Shopify Orders with payment pending, and manage the workflow from inside Shopify admin.
+Fast COD Pro is built for merchants who want a cleaner product-page path into Shopify Checkout. Add a branded checkout button, customize label, color, icon, and animation, then send shoppers directly to Shopify Checkout where Shopify-hosted fields collect customer and payment details.
 
 ### Core features
 
-- COD launcher button and popup checkout experience
-- Direct Shopify Order creation with COD tags and payment pending status
-- COD form settings with configurable text, colors, and fields
-- Orders Queue with search, filters, CSV export, and status management
+- Product-page checkout button
+- Redirects shoppers to Shopify Checkout
+- No offsite checkout and no Admin API order creation
+- Button label, color, icon, animation, and corner controls
 - Embedded admin dashboard with onboarding and launch-readiness sections
-- Billing plans through Shopify Billing: Free 100 orders/month and Unlimited
+- Billing plans through Shopify Billing
 
 ### Best-fit merchants
 
-- COD-first stores
-- stores selling on Meta, TikTok, or other paid traffic channels
-- merchants who need a lightweight COD lead and confirmation workflow
-- teams that want Shopify Orders plus CSV export for COD operations
-
-## Required listing assets to prepare
-
-- App icon: 1200 x 1200 PNG
-- Desktop admin screenshots
-- Mobile storefront COD popup screenshots
-- Short demo video or GIF
-- Support email and legal page URLs
-- Shopify review test store credentials and steps
-- Explanation for order creation and customer data use in the app review form
-
-## Production URLs
-
-- App URL: `https://app.fastcodpro.com`
-- Redirect URL: `https://app.fastcodpro.com/auth/callback`
-- App proxy: `/apps/fast-cod-pro` -> `https://app.fastcodpro.com/proxy`
-- Privacy Policy: `https://app.fastcodpro.com/privacy`
-- Terms of Service: `https://app.fastcodpro.com/terms`
-- Support: `https://app.fastcodpro.com/support`
-- Data deletion: `https://app.fastcodpro.com/data-deletion`
+- COD-first stores that use Shopify Checkout
+- merchants who want a prominent product-page checkout CTA
+- teams that need theme-level button controls without replacing Shopify Checkout
 
 ## Shopify review notes
 
-Fast COD Pro uses `read_products` to show product context, `write_app_proxy` for storefront COD form proxy routes, and `write_orders` to create Shopify Orders from COD submissions. Customer data collected by the COD form is used to create the order, show it in the app queue, support export, and honor deletion/redaction requests.
+Fast COD Pro uses `read_products` to show product context and `write_app_proxy` to load storefront button configuration. The app does not request `write_orders`, does not create Shopify Orders or Draft Orders, and does not collect customer address/payment details on the product page. Shoppers complete the order in Shopify Checkout.
 
 ## Reviewer Test Instructions
 
 1. Install Fast COD Pro on the provided development store.
 2. Open the embedded app from Shopify admin and confirm the dashboard loads.
-3. Open COD Form and verify the COD form text, colors, and fields are configurable.
+3. Open Checkout Button and verify button label, colors, icon, and animation are configurable.
 4. Open the theme editor, enable the Fast COD Pro theme app block on a product template, and save.
-5. Visit a product page, open the COD popup, and submit a test COD request with sample customer details.
-6. Confirm the thank-you page opens after submission.
-7. Return to Shopify Admin > Orders and verify the COD order appears with payment pending status, customer details, delivery address, product, and COD tags.
-8. Return to the app and verify the submission appears in Orders Queue.
+5. Visit a product page and click the Fast COD Pro button.
+6. Confirm the product is added to cart and Shopify Checkout opens.
+7. Enter customer details and select COD/manual payment only inside Shopify Checkout.
 
 ## Suggested screenshots
 
 1. Dashboard overview
-2. COD Form settings
-3. Storefront COD launcher and popup
-4. Orders Queue with search/filter/export
+2. Checkout Button settings
+3. Storefront checkout button
+4. Shopify Checkout redirect
 5. Billing plans
 
 ## Suggested pricing copy
 
-- Free: Start COD with 100 orders/month.
-- Unlimited: $10/month for unlimited COD orders, or $102/year with 15% annual savings.
+- Free: Start with the storefront checkout button.
+- Unlimited: $10/month for advanced storefront checkout button controls, or $102/year with 15% annual savings.

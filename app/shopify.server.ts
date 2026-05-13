@@ -14,13 +14,13 @@ import {
 
 const REQUIRED_SCOPES = [
   "read_products",
-  "write_orders",
   "write_app_proxy"
 ];
 
 const configuredScopes = (process.env.ADDITIONAL_SHOPIFY_SCOPES || "")
   .split(",")
   .map((scope) => scope.trim())
+  .filter((scope) => scope !== "write_orders" && scope !== "write_draft_orders")
   .filter(Boolean);
 
 const scopes = Array.from(new Set([...configuredScopes, ...REQUIRED_SCOPES]));

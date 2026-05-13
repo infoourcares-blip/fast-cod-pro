@@ -35,11 +35,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       detail: "Sessions and Fast COD Pro merchant data are purged when the app is removed.",
     },
     {
-      title: "COD storefront flow tested",
-      status: summary.stats.submissions > 0 ? "done" : "pending",
-      detail: summary.stats.submissions > 0
-        ? "At least one COD submission has been captured successfully."
-        : "Run at least one end-to-end storefront submission before review.",
+      title: "Shopify Checkout flow tested",
+      status: "pending",
+      detail: "Run one product page test and confirm the button sends the customer to Shopify Checkout.",
     },
     {
       title: "App listing assets prepared",
@@ -47,11 +45,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       detail: "Prepare final App Store screenshots, app icon, demo video, and listing copy before submitting.",
     },
     {
-      title: "Protected customer data approval",
-      status: "pending",
-      detail: orderWarning
-        ? "Order creation works but the latest test still had a warning. Review it, then apply for protected customer data access."
-        : "Apply for protected customer data access because the app collects name, phone, email, and delivery address.",
+      title: "Checkout bypass removed",
+      status: "done",
+      detail: "The storefront no longer collects customer address details or creates orders through the app proxy.",
     },
     {
       title: "Production billing validation",
@@ -101,8 +97,8 @@ export default function LaunchRoute() {
                 <p className="eyebrow">Critical blocker</p>
                 <h3 className="panelTitle">Latest order test needs attention</h3>
                 <p className="panelText">
-                  Everything else can be prepared locally, but the storefront COD submit must create
-                  a Shopify order cleanly before full App Store launch.
+                  This warning is from the old order creation flow. The storefront now redirects
+                  customers to Shopify Checkout instead.
                 </p>
               </div>
             </div>

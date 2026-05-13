@@ -6,7 +6,7 @@ export default function TermsRoute() {
         <h1 className="legalTitle">Terms of Service</h1>
         <p className="legalLead">
           These terms govern the use of Fast COD Pro by Shopify merchants who install the app and
-          use it to collect COD submissions, create Shopify Orders, and manage COD order workflows.
+          use it to add a storefront button that sends shoppers to Shopify Checkout.
         </p>
 
         <section className="legalSection">
@@ -21,8 +21,8 @@ export default function TermsRoute() {
         <section className="legalSection">
           <h2>Merchant responsibilities</h2>
           <p>
-            Merchants are responsible for verifying COD orders, managing shipment and fulfillment,
-            and reviewing their storefront form settings before using them in production.
+            Merchants are responsible for configuring Shopify Checkout, enabling any COD/manual
+            payment methods in Shopify, and reviewing storefront button settings before production use.
           </p>
         </section>
 
@@ -30,7 +30,7 @@ export default function TermsRoute() {
           <h2>Billing</h2>
           <p>
             Paid plans use Shopify Billing APIs where available. Merchants are responsible for
-            reviewing plan pricing, usage limits, and order volume caps before approving charges.
+            reviewing plan pricing and included storefront button features before approving charges.
           </p>
         </section>
 

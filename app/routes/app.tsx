@@ -33,7 +33,7 @@ export default function App() {
     <AppProvider embedded apiKey={apiKey}>
       <NavMenu>
         <a href="/app" rel="home">Dashboard</a>
-        <a href="/app/builder">COD Form</a>
+        <a href="/app/builder">Checkout Button</a>
         <a href="/app/submissions">Orders Queue</a>
         <a href="/app/billing">Billing Plans</a>
         <a href="/app/launch">Launch Readiness</a>

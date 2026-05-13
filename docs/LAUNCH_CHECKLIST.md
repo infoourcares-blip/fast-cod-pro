@@ -41,4 +41,4 @@
 ## Current known blocker
 
 - Rotate the exposed Shopify app secret before public App Store submission.
-- Run one final storefront test after the latest deploy and confirm the Shopify order includes customer name, phone, shipping address, product, price, COD tags, and payment pending status.
+- Run one final storefront test after the latest deploy and confirm the product page button opens Shopify Checkout.

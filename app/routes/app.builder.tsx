@@ -65,18 +65,6 @@ const toFieldKey = (value: string) => {
     .join("");
 };
 
-const makeUniqueFieldKey = (value: string, existingKeys: string[]) => {
-  const baseKey = toFieldKey(value);
-  const taken = new Set(existingKeys);
-  if (!taken.has(baseKey)) return baseKey;
-
-  let index = 2;
-  while (taken.has(`${baseKey}${index}`)) {
-    index += 1;
-  }
-  return `${baseKey}${index}`;
-};
-
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   const profile = await getFunnelProfile(session.shop);
@@ -112,7 +100,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const collectAddress = formData.get("collectAddress") === "on";
 
     if (!formTitle || !submitButtonLabel || !formButtonLabel || !successMessage) {
-      return { status: "error" as const, message: "Form title, button labels, and success message are required." };
+      return { status: "error" as const, message: "Checkout title, button labels, and note are required." };
     }
 
     await prisma.funnelProfile.update({
@@ -136,36 +124,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       },
     });
 
-    return { status: "success" as const, message: "COD form saved." };
+    return { status: "success" as const, message: "Checkout button saved." };
   }
 
   if (intent === "create-field") {
-    const label = String(formData.get("label") || "").trim();
-    const requestedFieldKey = String(formData.get("fieldKey") || "").trim();
-    const fieldType = String(formData.get("fieldType") || "text").trim();
-    const placeholder = String(formData.get("placeholder") || "").trim();
-    const required = formData.get("required") === "on";
-
-    if (!label) {
-      return { status: "error" as const, message: "Field label is required." };
-    }
-
-    const fieldKey = makeUniqueFieldKey(requestedFieldKey || label, profile.formFields.map((field) => field.fieldKey));
-
-    await prisma.codFormField.create({
-      data: {
-        funnelProfileId: profile.id,
-        label,
-        fieldKey,
-        fieldType,
-        placeholder,
-        required,
-        active: true,
-        sortOrder: profile.formFields.length + 1,
-      },
-    });
-
-    return { status: "success" as const, message: "Field added." };
+    return {
+      status: "error" as const,
+      message: "Custom pre-checkout fields are disabled. Shopify Checkout collects customer details."
+    };
   }
 
   if (intent === "reorder-fields") {
@@ -261,7 +227,6 @@ export default function BuilderRoute() {
     navigation.formData?.get("intent") === "create-field";
   const generatedFieldKey = toFieldKey(newField.label);
   const activeFields = orderedFields.filter((field) => field.active);
-  const previewFields = activeFields.length ? activeFields : orderedFields;
 
   useEffect(() => {
     setOrderedFields(fields);
@@ -314,23 +279,14 @@ export default function BuilderRoute() {
     setDraggedFieldId(null);
   };
 
-  const getFieldIcon = (fieldKey: string) => {
-    if (fieldKey === "customerName") return "👤";
-    if (fieldKey === "phone") return "☎";
-    if (fieldKey === "address1") return "📍";
-    if (fieldKey === "city") return "🏙";
-    if (fieldKey === "pincode") return "#";
-    return "";
-  };
-
   return (
-    <s-page heading="COD Form">
+    <s-page heading="Checkout Button">
       <div className="simpleShell">
         <section className="simpleHero">
           <div>
             <span className="simpleKicker">Step 1</span>
-            <h1>Create your COD form</h1>
-            <p>Keep it simple. Set the form text, colors, and fields, then test one COD order from the product page.</p>
+            <h1>Customize your Shopify Checkout button</h1>
+            <p>Keep orders inside Shopify Checkout. Customers enter address, phone, and COD payment details in Shopify-hosted fields.</p>
           </div>
           <a className="simplePrimary" href={themeEditorUrl} target="_top" rel="noreferrer">Enable on theme</a>
         </section>
@@ -345,14 +301,14 @@ export default function BuilderRoute() {
           <Form method="post" className="simpleCard">
             <input type="hidden" name="intent" value="save-form-settings" />
             <div className="simpleCardHeader">
-              <h2>Form settings</h2>
+              <h2>Button settings</h2>
               <button type="submit" className="simplePrimary" disabled={isSavingForm}>
                 {isSavingForm ? "Saving..." : "Save form"}
               </button>
             </div>
 
             <label className="simpleField">
-              <span>Form title</span>
+              <span>Checkout title</span>
               <input
                 name="formTitle"
                 value={formSettings.formTitle}
@@ -379,7 +335,7 @@ export default function BuilderRoute() {
             </label>
 
             <label className="simpleField">
-              <span>Form button label</span>
+              <span>Checkout button label</span>
               <input
                 name="formButtonLabel"
                 value={formSettings.formButtonLabel}
@@ -388,7 +344,7 @@ export default function BuilderRoute() {
             </label>
 
             <label className="simpleField">
-              <span>Success message</span>
+              <span>Checkout note</span>
               <input
                 name="successMessage"
                 value={formSettings.successMessage}
@@ -398,7 +354,7 @@ export default function BuilderRoute() {
 
             <div className="simpleTwo">
               <label className="simpleField">
-                <span>Form button color</span>
+                <span>Checkout button color</span>
                 <input
                   type="color"
                   name="buttonBgColor"
@@ -407,7 +363,7 @@ export default function BuilderRoute() {
                 />
               </label>
               <label className="simpleField">
-                <span>Form button text</span>
+                <span>Checkout button text</span>
                 <input
                   type="color"
                   name="buttonTextColor"
@@ -498,14 +454,14 @@ export default function BuilderRoute() {
                 checked={formSettings.collectAddress}
                 onChange={(event) => updateSetting("collectAddress", event.currentTarget.checked)}
               />
-              <span>Ask customer for address</span>
+              <span>Use Shopify Checkout address fields</span>
             </label>
           </Form>
 
           <section className="simpleCard">
             <div className="simpleCardHeader">
               <h2>Live preview</h2>
-              <span className="simplePill">{activeFields.length} active fields</span>
+              <span className="simplePill">Shopify Checkout</span>
             </div>
             <div className="simplePreview" style={{
               ["--simple-button-bg" as string]: formSettings.buttonBgColor,
@@ -524,7 +480,7 @@ export default function BuilderRoute() {
                 <span className="simplePreviewHome">⌂</span>
                 <div>
                   <strong>FAST COD PRO</strong>
-                  <span>{formSettings.formSubtitle}</span>
+                  <span>Secure Shopify Checkout</span>
                 </div>
                 <span className="simplePreviewClose">×</span>
               </div>
@@ -560,23 +516,30 @@ export default function BuilderRoute() {
                   </div>
                 </div>
 
-                <h3>{formSettings.formTitle}</h3>
-                {previewFields.slice(0, 5).map((field) => (
-                  <label className="simplePreviewField" key={field.id}>
-                    <span>
-                      {field.label}
-                      {field.required ? <em>*</em> : null}
-                    </span>
-                    <div className="simplePreviewInput">
-                      <b>{getFieldIcon(field.fieldKey)}</b>
-                      <small>{field.placeholder || field.label}</small>
-                    </div>
-                  </label>
-                ))}
+                <h3>Shopify Checkout</h3>
+                <div className="simplePreviewField">
+                  <span>Customer details</span>
+                  <div className="simplePreviewInput">
+                    <b>✓</b>
+                    <small>Collected by Shopify Checkout</small>
+                  </div>
+                </div>
+                <div className="simplePreviewField">
+                  <span>Shipping address</span>
+                  <div className="simplePreviewInput">
+                    <b>✓</b>
+                    <small>Entered in Shopify-hosted fields</small>
+                  </div>
+                </div>
+                <div className="simplePreviewField">
+                  <span>Payment method</span>
+                  <div className="simplePreviewInput">
+                    <b>✓</b>
+                    <small>COD selected in Shopify Checkout</small>
+                  </div>
+                </div>
                 <button type="button">
-                  {formSettings.formButtonLabel.includes("Order")
-                    ? `${formSettings.formButtonLabel} - ${previewAmount}`
-                    : `${formSettings.formButtonLabel}`}
+                  Continue to Shopify Checkout
                 </button>
               </div>
             </div>
@@ -586,8 +549,8 @@ export default function BuilderRoute() {
         <section className="simpleCard">
           <div className="simpleCardHeader">
             <div>
-              <h2>Fields</h2>
-              <p>Add a field in one line. The app creates the technical key automatically.</p>
+              <h2>Checkout fields</h2>
+              <p>Disabled for App Store compliance. Customer name, phone, address, and payment must be collected in Shopify Checkout.</p>
             </div>
           </div>
 
@@ -633,8 +596,8 @@ export default function BuilderRoute() {
               />
               <span>Required field</span>
             </label>
-            <button type="submit" className="simplePrimary" disabled={isAddingField}>
-              {isAddingField ? "Adding..." : "Add field"}
+            <button type="submit" className="simplePrimary" disabled>
+              {isAddingField ? "Adding..." : "Disabled"}
             </button>
             <div className="simpleFieldHelper">
               <span>Quick fill:</span>
@@ -652,7 +615,7 @@ export default function BuilderRoute() {
           </Form>
 
           <div className="simpleFieldListHeader">
-            <strong>Current form fields</strong>
+            <strong>Legacy field list</strong>
             <span>{orderedFields.length} total · {activeFields.length} visible</span>
           </div>
 

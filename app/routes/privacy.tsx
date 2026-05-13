@@ -5,25 +5,24 @@ export default function PrivacyRoute() {
         <p className="legalEyebrow">Fast COD Pro</p>
         <h1 className="legalTitle">Privacy Policy</h1>
         <p className="legalLead">
-          Fast COD Pro helps Shopify merchants run COD order forms, create Shopify Orders,
-          and manage COD submissions. This page describes what data we process, why we process it,
+          Fast COD Pro helps Shopify merchants add a product-page button that sends shoppers
+          to secure Shopify Checkout. This page describes what data we process, why we process it,
           and how merchants can request deletion or support.
         </p>
 
         <section className="legalSection">
           <h2>Data we process</h2>
           <p>
-            We process merchant account data needed to authenticate the app and storefront order
-            data submitted through COD forms, including name, phone number, address, email,
-            product selection, and operational notes.
+            We process merchant account data needed to authenticate the app, app configuration
+            settings, product context used by the storefront button, and support messages sent by merchants.
           </p>
         </section>
 
         <section className="legalSection">
           <h2>Why we process this data</h2>
           <p>
-            We use this data to display app settings, create Shopify Orders, store COD
-            submissions, export order data, and support merchants using Fast COD Pro.
+            We use this data to display app settings, configure the storefront checkout button,
+            route shoppers to Shopify Checkout, and support merchants using Fast COD Pro.
           </p>
         </section>
 

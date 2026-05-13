@@ -67,12 +67,12 @@ const planCatalog = [
     monthlyPrice: 0,
     annualPrice: 0,
     usageLimit: FREE_ORDER_LIMIT,
-    description: "Start with 100 COD orders every month.",
+    description: "Start with checkout button setup for one store.",
     features: [
-      "100 COD orders/month",
-      "Fast COD form on product pages",
-      "Orders created in Shopify",
-      "Basic order dashboard",
+      "Shopify Checkout button on product pages",
+      "Button color, icon, and animation controls",
+      "Uses Shopify-hosted checkout fields",
+      "Basic setup dashboard",
     ],
     cta: "Current free plan",
     variant: "free",
@@ -83,12 +83,12 @@ const planCatalog = [
     monthlyPrice: UNLIMITED_MONTHLY_PRICE,
     annualPrice: UNLIMITED_ANNUAL_PRICE,
     usageLimit: null,
-    description: "Unlimited COD orders for growing stores.",
+    description: "Advanced storefront checkout button controls for growing stores.",
     features: [
-      "Unlimited COD orders/month",
-      "Fast COD form on product pages",
-      "Orders created in Shopify",
-      "Basic order dashboard",
+      "Unlimited storefront checkout launches",
+      "Shopify Checkout button on product pages",
+      "Uses Shopify-hosted checkout fields",
+      "Basic setup dashboard",
     ],
     cta: "Select Unlimited",
     variant: "featured",
@@ -201,7 +201,7 @@ export default function BillingRoute() {
               <p className="eyebrow">Billing</p>
               <h2 className="panelTitle">Choose your plan here</h2>
               <p className="panelText">
-                Start free with 100 monthly COD orders. Upgrade to Unlimited when you need no order limit.
+                Start free with a Shopify Checkout button. Upgrade to Unlimited for advanced storefront controls.
               </p>
             </div>
             <div className="buttonRow">

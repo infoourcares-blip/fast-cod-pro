@@ -39,16 +39,16 @@ export default function App() {
         )}
         <ul className={styles.list}>
           <li>
-            <strong>Smart COD forms</strong>. Capture order intent faster with
-            embedded or popup flows that reduce checkout friction.
+            <strong>Shopify Checkout button</strong>. Send shoppers from the product
+            page into secure Shopify Checkout.
           </li>
           <li>
-            <strong>Shopify Orders</strong>. Create payment-pending COD orders
-            with customer and delivery details.
+            <strong>Checkout compliant</strong>. Customer details and COD payment
+            selection stay inside Shopify-hosted checkout fields.
           </li>
           <li>
-            <strong>Orders Queue</strong>. Review COD submissions and export
-            operational data for fulfillment.
+            <strong>Theme controls</strong>. Customize the button label, colors,
+            icon, and animation from inside Shopify admin.
           </li>
         </ul>
       </div>

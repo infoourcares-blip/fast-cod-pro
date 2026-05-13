@@ -14,7 +14,7 @@ export default function App() {
         <meta name="viewport" content="width=device-width,initial-scale=1" />
         <meta
           name="description"
-          content="Fast COD Pro is a Shopify embedded app for fast cash-on-delivery forms, Shopify order creation, and COD order management."
+          content="Fast COD Pro is a Shopify embedded app for product-page checkout buttons that send customers to secure Shopify Checkout."
         />
         <Meta />
         <Links />
