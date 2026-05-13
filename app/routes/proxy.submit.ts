@@ -503,19 +503,16 @@ async function getRestOrderStatusUrl(shop: string, accessToken: string, orderId:
 async function findRestCustomerId({
   shop,
   accessToken,
-  phone,
-  email
+  phone
 }: {
   shop: string;
   accessToken: string;
   phone: string;
-  email: string;
 }) {
   const queries = [
     phone ? `phone:${phone}` : "",
     phone ? phone : "",
-    phone ? phone.replace(/\D/g, "").slice(-10) : "",
-    email ? `email:${email}` : ""
+    phone ? phone.replace(/\D/g, "").slice(-10) : ""
   ].filter(Boolean);
 
   for (const query of queries) {
@@ -554,14 +551,12 @@ async function createRestCustomerId({
   accessToken,
   customerName,
   phone,
-  email,
   address
 }: {
   shop: string;
   accessToken: string;
   customerName: string;
   phone: string;
-  email: string;
   address: Record<string, string>;
 }) {
   const { firstName, lastName } = splitCustomerName(customerName);
@@ -578,9 +573,8 @@ async function createRestCustomerId({
         customer: {
           first_name: firstName,
           last_name: lastName || "-",
-          email: email || undefined,
           phone,
-          verified_email: Boolean(email),
+          verified_email: false,
           addresses: [address],
           default_address: address
         }
@@ -686,11 +680,11 @@ async function createOrderDirectly({
     {
       variables: {
         order: {
-          email: email || undefined,
           phone,
           note: [
             notes,
             `Customer name: ${customerName}`,
+            email ? `Customer email: ${email}` : "",
             addressText ? `Delivery address: ${addressText}` : "",
             "Payment method: Cash on Delivery",
             "Source: Fast COD Pro"
@@ -726,6 +720,7 @@ async function createOrderDirectly({
             { key: "customer_name", value: customerName },
             { key: "payment_method", value: "Cash on Delivery" },
             { key: "customer_phone", value: phone },
+            { key: "customer_email", value: email },
             { key: "delivery_address", value: addressText },
             { key: "city", value: cleanCity },
             { key: "pincode", value: postalCode },
@@ -818,8 +813,7 @@ async function createRestOrderDirectly({
   const existingCustomerId = await findRestCustomerId({
     shop,
     accessToken,
-    phone,
-    email
+    phone
   });
   const createdCustomerId = existingCustomerId
     ? null
@@ -828,7 +822,6 @@ async function createRestOrderDirectly({
         accessToken,
         customerName,
         phone,
-        email,
         address
       });
   const customerId = existingCustomerId || createdCustomerId;
@@ -840,10 +833,9 @@ async function createRestOrderDirectly({
     },
     body: JSON.stringify({
       order: {
-        email: email || undefined,
         phone,
         customer: customerId ? { id: customerId } : undefined,
-        contact_email: email || undefined,
+        contact_email: undefined,
         financial_status: "pending",
         fulfillment_status: null,
         inventory_behaviour: "decrement_ignoring_policy",
@@ -853,6 +845,7 @@ async function createRestOrderDirectly({
         note: [
           notes,
           `Customer name: ${customerName}`,
+          email ? `Customer email: ${email}` : "",
           addressText ? `Delivery address: ${addressText}` : "",
           "Payment method: Cash on Delivery",
           "Source: Fast COD Pro"
@@ -878,6 +871,7 @@ async function createRestOrderDirectly({
           { name: "customer_name", value: customerName },
           { name: "payment_method", value: "Cash on Delivery" },
           { name: "customer_phone", value: phone },
+          { name: "customer_email", value: email },
           { name: "delivery_address", value: addressText },
           { name: "city", value: cleanCity },
           { name: "pincode", value: postalCode },
@@ -1228,8 +1222,11 @@ async function handleSubmission(
         {
           variables: {
             input: {
-              email: email || undefined,
-              note: [notes, rawPhone && rawPhone !== phone ? `Original phone: ${rawPhone}` : ""]
+              note: [
+                notes,
+                email ? `Customer email: ${email}` : "",
+                rawPhone && rawPhone !== phone ? `Original phone: ${rawPhone}` : ""
+              ]
                 .filter(Boolean)
                 .join("\n") || undefined,
               shippingAddress: {
