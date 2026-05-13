@@ -32,7 +32,7 @@ type SubmissionContext = {
   tokenIssue?: string;
 };
 
-const SUBMIT_BUILD_ID = "cod-submit-2026-05-13-phone-customer-1";
+const SUBMIT_BUILD_ID = "cod-submit-2026-05-13-fast-phone-customer-1";
 const FREE_ORDER_LIMIT = 100;
 const OFFLINE_TOKEN_REFRESH_WINDOW_MS = 5 * 60 * 1000;
 const TOKEN_EXCHANGE_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:token-exchange";
@@ -708,14 +708,6 @@ async function createOrderDirectly({
     });
 
     if (restOrderResult.order?.id) {
-      const phoneUpdateError = await updateOrderContactPhone(admin, restOrderResult.order.id, phone);
-      if (phoneUpdateError) {
-        console.error("Fast COD Pro REST order phone update failed", {
-          orderId: restOrderResult.order.id,
-          phoneUpdateError
-        });
-      }
-
       return restOrderResult;
     }
   }

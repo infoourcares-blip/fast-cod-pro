@@ -451,7 +451,7 @@
       if (!submitButton) return;
       submitInProgress = true;
       status.hidden = false;
-      status.textContent = "Creating your COD order...";
+      status.textContent = "Placing order securely...";
       status.style.color = "#0f172a";
       submitButton.disabled = true;
 
