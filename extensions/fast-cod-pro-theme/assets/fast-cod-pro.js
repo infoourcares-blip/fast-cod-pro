@@ -79,21 +79,45 @@
     return String((productFormVariant && productFormVariant.value) || container.dataset.variantId || "").replace(/\D/g, "");
   }
 
+  async function getAvailableVariantId(container, preferredVariantId) {
+    var handle = container.dataset.productHandle;
+    if (!handle) return preferredVariantId;
+
+    try {
+      var response = await fetch("/products/" + encodeURIComponent(handle) + ".js", {
+        cache: "no-store",
+        headers: { Accept: "application/json" }
+      });
+      if (!response.ok) return preferredVariantId;
+
+      var product = await response.json();
+      var variants = product && Array.isArray(product.variants) ? product.variants : [];
+      var preferred = variants.find(function (variant) {
+        return String(variant.id) === String(preferredVariantId) && variant.available !== false;
+      });
+      var available = preferred || variants.find(function (variant) {
+        return variant.available !== false;
+      });
+
+      if (available && available.id) {
+        container.dataset.variantId = String(available.id);
+        return String(available.id);
+      }
+    } catch (error) {
+      console.error("Fast COD Pro available variant lookup failed", error);
+    }
+
+    return preferredVariantId;
+  }
+
   function getCurrentQuantity(container) {
     var productFormQuantity = document.querySelector('form[action*="/cart/add"] [name="quantity"]');
     var quantity = Number((productFormQuantity && productFormQuantity.value) || container.dataset.quantity || 1);
     return Math.max(1, Number.isFinite(quantity) ? quantity : 1);
   }
 
-  async function addToCartAndCheckout(container, status, button) {
-    var variantId = getCurrentVariantId(container);
-    var quantity = getCurrentQuantity(container);
-
-    if (!variantId) {
-      throw new Error("Please select a product variant first.");
-    }
-
-    var response = await fetch("/cart/add.js", {
+  async function addVariantToCart(variantId, quantity) {
+    return fetch("/cart/add.js", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -111,6 +135,25 @@
         ]
       })
     });
+  }
+
+  async function addToCartAndCheckout(container, status, button) {
+    var selectedVariantId = getCurrentVariantId(container);
+    var variantId = await getAvailableVariantId(container, selectedVariantId);
+    var quantity = getCurrentQuantity(container);
+
+    if (!variantId) {
+      throw new Error("Please select a product variant first.");
+    }
+
+    var response = await addVariantToCart(variantId, quantity);
+
+    if (!response.ok && String(variantId) === String(selectedVariantId)) {
+      var fallbackVariantId = await getAvailableVariantId(container, "");
+      if (fallbackVariantId && String(fallbackVariantId) !== String(variantId)) {
+        response = await addVariantToCart(fallbackVariantId, quantity);
+      }
+    }
 
     if (!response.ok) {
       var text = await response.text();
