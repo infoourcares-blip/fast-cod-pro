@@ -15,7 +15,8 @@ import {
 const REQUIRED_SCOPES = [
   "read_products",
   "write_app_proxy",
-  "write_orders"
+  "write_orders",
+  "write_draft_orders"
 ];
 
 const configuredScopes = (process.env.ADDITIONAL_SHOPIFY_SCOPES || "")

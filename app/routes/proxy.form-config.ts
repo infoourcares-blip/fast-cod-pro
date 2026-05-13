@@ -19,6 +19,11 @@ const requiredFieldFallbacks = [
   }
 ];
 
+function instantCodCopy(value: string | null | undefined, fallback: string) {
+  const copy = String(value || "").trim();
+  return /shopify checkout/i.test(copy) ? fallback : copy || fallback;
+}
+
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.public.appProxy(request);
 
@@ -46,10 +51,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   return Response.json({
     form: {
-      title: "Shopify Checkout",
-      subtitle: "Customer details and COD payment are completed in Shopify Checkout.",
-      submitButtonLabel: "Continue to Shopify Checkout",
-      formButtonLabel: "Continue to Shopify Checkout",
+      title: instantCodCopy(profile.formTitle, "Cash on Delivery"),
+      subtitle: instantCodCopy(profile.formSubtitle, "Enter your details and confirm your COD order."),
+      submitButtonLabel: instantCodCopy(profile.submitButtonLabel, "Order Now - Cash on Delivery"),
+      formButtonLabel: instantCodCopy(profile.formButtonLabel, "Complete COD Order"),
       successMessage: profile.successMessage,
       themeColor: profile.themeColor,
       collectAddress: profile.collectAddress,
