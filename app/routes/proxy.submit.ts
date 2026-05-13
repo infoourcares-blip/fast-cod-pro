@@ -32,7 +32,7 @@ type SubmissionContext = {
   tokenIssue?: string;
 };
 
-const SUBMIT_BUILD_ID = "cod-submit-2026-05-13-graphql-phone-contact-1";
+const SUBMIT_BUILD_ID = "cod-submit-2026-05-13-order-update-phone-1";
 const FREE_ORDER_LIMIT = 100;
 const OFFLINE_TOKEN_REFRESH_WINDOW_MS = 5 * 60 * 1000;
 const TOKEN_EXCHANGE_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:token-exchange";
@@ -504,6 +504,45 @@ async function getRestOrderStatusUrl(shop: string, accessToken: string, orderId:
   }
 }
 
+async function updateOrderContactPhone(admin: AdminClient, orderId: string, phone: string) {
+  try {
+    const response = await admin.graphql(
+      `#graphql
+        mutation FastCodProUpdateOrderPhone($input: OrderInput!) {
+          orderUpdate(input: $input) {
+            order {
+              id
+            }
+            userErrors {
+              field
+              message
+            }
+          }
+        }`,
+      {
+        variables: {
+          input: {
+            id: orderId,
+            phone
+          }
+        }
+      }
+    );
+    const payload = (await response.json()) as {
+      errors?: GraphqlTopLevelError[] | GraphqlTopLevelError | null;
+      data?: {
+        orderUpdate?: {
+          userErrors?: GraphqlUserError[];
+        } | null;
+      };
+    };
+
+    return formatGraphqlErrors(payload.data?.orderUpdate?.userErrors ?? [], payload.errors);
+  } catch (error) {
+    return error instanceof Error ? error.message : "Order phone update failed.";
+  }
+}
+
 async function createOrderDirectly({
   admin,
   shop,
@@ -641,6 +680,14 @@ async function createOrderDirectly({
 
   const graphqlOrder = payload.data?.orderCreate?.order;
   if (graphqlOrder?.id) {
+    const phoneUpdateError = await updateOrderContactPhone(admin, graphqlOrder.id, phone);
+    if (phoneUpdateError) {
+      console.error("Fast COD Pro order phone update failed", {
+        orderId: graphqlOrder.id,
+        phoneUpdateError
+      });
+    }
+
     return {
       order: {
         ...graphqlOrder,
@@ -673,6 +720,14 @@ async function createOrderDirectly({
     });
 
     if (restOrderResult.order?.id) {
+      const phoneUpdateError = await updateOrderContactPhone(admin, restOrderResult.order.id, phone);
+      if (phoneUpdateError) {
+        console.error("Fast COD Pro REST order phone update failed", {
+          orderId: restOrderResult.order.id,
+          phoneUpdateError
+        });
+      }
+
       return restOrderResult;
     }
 
