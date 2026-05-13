@@ -32,7 +32,7 @@ type SubmissionContext = {
   tokenIssue?: string;
 };
 
-const SUBMIT_BUILD_ID = "cod-submit-2026-05-13-phone-as-contact-1";
+const SUBMIT_BUILD_ID = "cod-submit-2026-05-13-phone-customer-1";
 const FREE_ORDER_LIMIT = 100;
 const OFFLINE_TOKEN_REFRESH_WINDOW_MS = 5 * 60 * 1000;
 const TOKEN_EXCHANGE_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:token-exchange";
@@ -543,6 +543,117 @@ async function updateOrderContactPhone(admin: AdminClient, orderId: string, phon
   }
 }
 
+async function findRestCustomerByPhone({
+  shop,
+  accessToken,
+  phone
+}: {
+  shop: string;
+  accessToken: string;
+  phone: string;
+}) {
+  const digits = phone.replace(/\D/g, "");
+  const localDigits = digits.slice(-10);
+  const queries = [`phone:${phone}`, phone, localDigits].filter(Boolean);
+
+  for (const query of queries) {
+    try {
+      const response = await fetch(
+        `https://${shop}/admin/api/2026-04/customers/search.json?query=${encodeURIComponent(query)}&limit=1`,
+        {
+          headers: {
+            Accept: "application/json",
+            "X-Shopify-Access-Token": accessToken
+          }
+        }
+      );
+      const payload = (await response.json()) as {
+        customers?: Array<{ id?: number | string | null; email?: string | null; phone?: string | null }>;
+      };
+      const customer = payload.customers?.[0];
+
+      if (response.ok && customer?.id) {
+        return {
+          id: Number(customer.id),
+          email: customer.email || "",
+          phone: customer.phone || ""
+        };
+      }
+    } catch (error) {
+      console.error("Fast COD Pro customer phone lookup failed", {
+        shop,
+        query,
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  }
+
+  return null;
+}
+
+async function createRestPhoneCustomer({
+  shop,
+  accessToken,
+  customerName,
+  phone,
+  address
+}: {
+  shop: string;
+  accessToken: string;
+  customerName: string;
+  phone: string;
+  address: {
+    first_name: string;
+    last_name: string;
+    address1: string;
+    city: string;
+    zip: string;
+    phone: string;
+    country: string;
+    country_code: string;
+  };
+}) {
+  const { firstName, lastName } = splitCustomerName(customerName);
+  const response = await fetch(`https://${shop}/admin/api/2026-04/customers.json`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Shopify-Access-Token": accessToken
+    },
+    body: JSON.stringify({
+      customer: {
+        first_name: firstName,
+        last_name: lastName || "-",
+        phone,
+        verified_phone: true,
+        addresses: [address],
+        default_address: address,
+        tags: "Fast COD Pro"
+      }
+    })
+  });
+  const responseText = await response.text();
+  let payload: { customer?: { id?: number | string | null }; errors?: unknown } = {};
+
+  try {
+    payload = JSON.parse(responseText);
+  } catch (_error) {
+    payload = {};
+  }
+
+  if (response.ok && payload.customer?.id) {
+    return Number(payload.customer.id);
+  }
+
+  console.error("Fast COD Pro phone customer create failed", {
+    shop,
+    responseStatus: response.status,
+    responseText: responseText.slice(0, 700)
+  });
+
+  return null;
+}
+
 async function createOrderDirectly({
   admin,
   shop,
@@ -786,19 +897,22 @@ async function createRestOrderDirectly({
     country: "India",
     country_code: "IN"
   };
-  const displayPhone = phone.replace(/^\+91/, "").replace(/^\+/, "");
-  const buildOrderBody = (includePhoneCustomer: boolean, usePhoneAsContact: boolean) => ({
+  const foundPhoneCustomer = await findRestCustomerByPhone({ shop, accessToken, phone });
+  const phoneCustomerId =
+    foundPhoneCustomer && !foundPhoneCustomer.email
+      ? foundPhoneCustomer.id
+      : await createRestPhoneCustomer({
+          shop,
+          accessToken,
+          customerName,
+          phone,
+          address
+        });
+  const buildOrderBody = (useCustomerId: boolean) => ({
       order: {
-        email: usePhoneAsContact ? displayPhone : undefined,
         phone,
-        customer: includePhoneCustomer
-          ? {
-              first_name: firstName,
-              last_name: lastName || "-",
-              phone
-            }
-          : undefined,
-        contact_email: usePhoneAsContact ? displayPhone : undefined,
+        customer: useCustomerId && phoneCustomerId ? { id: phoneCustomerId } : undefined,
+        contact_email: undefined,
         financial_status: "pending",
         gateway: "Cash on Delivery (COD)",
         payment_gateway_names: ["Cash on Delivery (COD)"],
@@ -852,17 +966,17 @@ async function createRestOrderDirectly({
       }
     });
 
-  const postOrder = (includePhoneCustomer: boolean, usePhoneAsContact: boolean) =>
+  const postOrder = (useCustomerId: boolean) =>
     fetch(`https://${shop}/admin/api/2026-04/orders.json`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "X-Shopify-Access-Token": accessToken
       },
-      body: JSON.stringify(buildOrderBody(includePhoneCustomer, usePhoneAsContact))
+      body: JSON.stringify(buildOrderBody(useCustomerId))
     });
 
-  let response = await postOrder(true, true);
+  let response = await postOrder(Boolean(phoneCustomerId));
   const responseText = await response.text();
   let payload: {
     order?: {
@@ -881,29 +995,7 @@ async function createRestOrderDirectly({
   }
 
   if (!response.ok) {
-    response = await postOrder(true, false);
-    const retryResponseText = await response.text();
-
-    try {
-      payload = JSON.parse(retryResponseText);
-    } catch (_error) {
-      payload = {};
-    }
-  }
-
-  if (!response.ok && /customer|phone/i.test(JSON.stringify(payload))) {
-    response = await postOrder(false, true);
-    const retryResponseText = await response.text();
-
-    try {
-      payload = JSON.parse(retryResponseText);
-    } catch (_error) {
-      payload = {};
-    }
-  }
-
-  if (!response.ok) {
-    response = await postOrder(false, false);
+    response = await postOrder(false);
     const retryResponseText = await response.text();
 
     try {
