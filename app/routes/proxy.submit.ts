@@ -500,6 +500,55 @@ async function getRestOrderStatusUrl(shop: string, accessToken: string, orderId:
   }
 }
 
+async function findRestCustomerId({
+  shop,
+  accessToken,
+  phone,
+  email
+}: {
+  shop: string;
+  accessToken: string;
+  phone: string;
+  email: string;
+}) {
+  const queries = [
+    phone ? `phone:${phone}` : "",
+    phone ? phone : "",
+    phone ? phone.replace(/\D/g, "").slice(-10) : "",
+    email ? `email:${email}` : ""
+  ].filter(Boolean);
+
+  for (const query of queries) {
+    try {
+      const response = await fetch(
+        `https://${shop}/admin/api/2026-04/customers/search.json?query=${encodeURIComponent(query)}&limit=1`,
+        {
+          headers: {
+            Accept: "application/json",
+            "X-Shopify-Access-Token": accessToken
+          }
+        }
+      );
+      const payload = (await response.json()) as {
+        customers?: Array<{ id?: number | string | null }>;
+      };
+      const customerId = payload.customers?.[0]?.id;
+
+      if (response.ok && customerId) {
+        return Number(customerId);
+      }
+    } catch (error) {
+      console.error("Fast COD Pro customer lookup failed", {
+        shop,
+        query,
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  }
+
+  return null;
+}
+
 async function createOrderDirectly({
   admin,
   shop,
@@ -693,7 +742,7 @@ async function createRestOrderDirectly({
   const addressText = visibleAddress(cleanAddress1, cleanCity, postalCode);
   const address = {
     first_name: firstName,
-    last_name: lastName,
+    last_name: lastName || "-",
     address1: cleanAddress1,
     city: cleanCity,
     zip: postalCode,
@@ -701,6 +750,20 @@ async function createRestOrderDirectly({
     country: "India",
     country_code: "IN"
   };
+  const existingCustomerId = await findRestCustomerId({
+    shop,
+    accessToken,
+    phone,
+    email
+  });
+  const customerPayload = existingCustomerId
+    ? { id: existingCustomerId }
+    : {
+        first_name: firstName,
+        last_name: lastName || "-",
+        email: email || undefined,
+        phone
+      };
   const response = await fetch(`https://${shop}/admin/api/2026-04/orders.json`, {
     method: "POST",
     headers: {
@@ -711,6 +774,7 @@ async function createRestOrderDirectly({
       order: {
         email: email || undefined,
         phone,
+        customer: customerPayload,
         contact_email: email || undefined,
         financial_status: "pending",
         fulfillment_status: null,
