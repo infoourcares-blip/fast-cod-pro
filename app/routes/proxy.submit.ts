@@ -362,6 +362,12 @@ function numericVariantId(value: string) {
   return match ? match[1] : "";
 }
 
+function numericOrderId(value: string) {
+  const raw = String(value || "").trim();
+  const match = raw.match(/(\d+)$/);
+  return match ? match[1] : "";
+}
+
 function splitCustomerName(customerName: string) {
   const parts = customerName.trim().split(/\s+/).filter(Boolean);
   if (parts.length <= 1) {
@@ -463,6 +469,35 @@ function normalizeCustomerPhone(value: string) {
 
 function isValidShopifyPhone(value: string) {
   return /^\+[1-9]\d{7,14}$/.test(value);
+}
+
+async function getRestOrderStatusUrl(shop: string, accessToken: string, orderId: string) {
+  const orderNumericId = numericOrderId(orderId);
+  if (!orderNumericId) return "";
+
+  try {
+    const response = await fetch(`https://${shop}/admin/api/2026-04/orders/${orderNumericId}.json`, {
+      headers: {
+        Accept: "application/json",
+        "X-Shopify-Access-Token": accessToken
+      }
+    });
+    const payload = (await response.json()) as {
+      order?: {
+        order_status_url?: string | null;
+        status_url?: string | null;
+      };
+    };
+
+    return payload.order?.order_status_url || payload.order?.status_url || "";
+  } catch (error) {
+    console.error("Fast COD Pro order status URL lookup failed", {
+      shop,
+      orderId,
+      error: error instanceof Error ? error.message : String(error)
+    });
+    return "";
+  }
 }
 
 async function createOrderDirectly({
@@ -1014,7 +1049,7 @@ async function handleSubmission(
       | undefined;
     let draftError: string | null = null;
 
-    if (hasOrderCreateScopes(session.scope)) {
+    if (hasOrderCreateScopes(session.scope) && !hasDraftOrderScopes(session.scope)) {
       try {
         const directOrderResult = await createOrderDirectly({
           admin,
@@ -1046,7 +1081,7 @@ async function handleSubmission(
       }
     }
 
-    if (!completedOrder?.id && !hasOrderCreateScopes(session.scope)) {
+    if (!completedOrder?.id && hasDraftOrderScopes(session.scope)) {
       try {
       const draftOrderResponse = await admin.graphql(
         `#graphql
@@ -1099,6 +1134,10 @@ async function handleSubmission(
                   quantity
                 }
               ],
+              shippingLine: {
+                title: "Free shipping",
+                price: "0.00"
+              },
               customAttributes: [
                 { key: "customer_name", value: customerName },
                 { key: "phone", value: phone },
@@ -1207,7 +1246,17 @@ async function handleSubmission(
         );
 
         return {
-          order: completePayload.data?.draftOrderComplete?.draftOrder?.order,
+          order: {
+            ...completePayload.data?.draftOrderComplete?.draftOrder?.order,
+            orderStatusUrl:
+              session.accessToken && completePayload.data?.draftOrderComplete?.draftOrder?.order?.id
+                ? await getRestOrderStatusUrl(
+                    session.shop,
+                    session.accessToken,
+                    completePayload.data.draftOrderComplete.draftOrder.order.id
+                  )
+                : null
+          },
           error: graphqlError
         };
       };
