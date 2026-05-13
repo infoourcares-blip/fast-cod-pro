@@ -391,6 +391,10 @@ function normalizeSpaces(value: string) {
   return String(value || "").replace(/\s+/g, " ").trim();
 }
 
+function moneyAmount(value: number) {
+  return Number.isFinite(value) && value > 0 ? value.toFixed(2) : "0.00";
+}
+
 function cleanAddressLine(address1: string, postalCode: string, city: string) {
   let cleaned = normalizeSpaces(address1);
   const postal = normalizeSpaces(postalCode);
@@ -621,7 +625,8 @@ async function createOrderDirectly({
   notes,
   rawVariantId,
   variantId,
-  quantity
+  quantity,
+  price
 }: {
   admin: AdminClient;
   shop: string;
@@ -636,6 +641,7 @@ async function createOrderDirectly({
   rawVariantId: string;
   variantId: string;
   quantity: number;
+  price: number;
 }) {
   const { firstName, lastName } = splitCustomerName(customerName);
   const postalCode = inferPostalCode(pincode, address1);
@@ -655,7 +661,8 @@ async function createOrderDirectly({
       pincode,
       notes,
       rawVariantId,
-      quantity
+      quantity,
+      price
     });
 
     if (restOrderResult.order?.id) {
@@ -776,7 +783,8 @@ async function createRestOrderDirectly({
   pincode,
   notes,
   rawVariantId,
-  quantity
+  quantity,
+  price
 }: {
   shop: string;
   accessToken: string;
@@ -789,6 +797,7 @@ async function createRestOrderDirectly({
   notes: string;
   rawVariantId: string;
   quantity: number;
+  price: number;
 }) {
   const variantNumericId = numericVariantId(rawVariantId);
   if (!variantNumericId) {
@@ -800,6 +809,7 @@ async function createRestOrderDirectly({
   const cleanAddress1 = cleanAddressLine(address1, postalCode, city);
   const cleanCity = cleanCityName(city, postalCode);
   const addressText = visibleAddress(cleanAddress1, cleanCity, postalCode);
+  const totalAmount = moneyAmount(price * Math.max(1, quantity));
   const address = {
     first_name: firstName,
     last_name: lastName || "-",
@@ -837,6 +847,8 @@ async function createRestOrderDirectly({
         customer: customerId ? { id: customerId } : undefined,
         contact_email: undefined,
         financial_status: "pending",
+        gateway: "Cash on Delivery (COD)",
+        payment_gateway_names: ["Cash on Delivery (COD)"],
         fulfillment_status: null,
         inventory_behaviour: "decrement_ignoring_policy",
         send_receipt: false,
@@ -863,6 +875,15 @@ async function createRestOrderDirectly({
             title: "Free shipping",
             price: "0.00",
             code: "FREE"
+          }
+        ],
+        transactions: [
+          {
+            kind: "sale",
+            status: "pending",
+            amount: totalAmount,
+            gateway: "Cash on Delivery (COD)",
+            currency: "INR"
           }
         ],
         shipping_address: address,
@@ -1182,7 +1203,8 @@ async function handleSubmission(
             .join("\n"),
           rawVariantId,
           variantId,
-          quantity
+          quantity,
+          price
         });
 
         if (directOrderResult.order?.id) {
@@ -1416,7 +1438,8 @@ async function handleSubmission(
                   .join("\n"),
                 rawVariantId,
                 variantId,
-                quantity
+                quantity,
+                price
               });
 
               if (directFallbackResult.order?.id) {
