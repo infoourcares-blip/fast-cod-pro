@@ -549,6 +549,71 @@ async function findRestCustomerId({
   return null;
 }
 
+async function createRestCustomerId({
+  shop,
+  accessToken,
+  customerName,
+  phone,
+  email,
+  address
+}: {
+  shop: string;
+  accessToken: string;
+  customerName: string;
+  phone: string;
+  email: string;
+  address: Record<string, string>;
+}) {
+  const { firstName, lastName } = splitCustomerName(customerName);
+
+  try {
+    const response = await fetch(`https://${shop}/admin/api/2026-04/customers.json`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "X-Shopify-Access-Token": accessToken
+      },
+      body: JSON.stringify({
+        customer: {
+          first_name: firstName,
+          last_name: lastName || "-",
+          email: email || undefined,
+          phone,
+          verified_email: Boolean(email),
+          addresses: [address],
+          default_address: address
+        }
+      })
+    });
+    const text = await response.text();
+    let payload: { customer?: { id?: number | string | null }; errors?: unknown } = {};
+
+    try {
+      payload = JSON.parse(text);
+    } catch (_error) {
+      payload = {};
+    }
+
+    if (response.ok && payload.customer?.id) {
+      return Number(payload.customer.id);
+    }
+
+    console.error("Fast COD Pro customer create failed", {
+      shop,
+      status: response.status,
+      error: text.slice(0, 500)
+    });
+  } catch (error) {
+    console.error("Fast COD Pro customer create request failed", {
+      shop,
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+
+  return null;
+}
+
 async function createOrderDirectly({
   admin,
   shop,
@@ -756,14 +821,17 @@ async function createRestOrderDirectly({
     phone,
     email
   });
-  const customerPayload = existingCustomerId
-    ? { id: existingCustomerId }
-    : {
-        first_name: firstName,
-        last_name: lastName || "-",
-        email: email || undefined,
-        phone
-      };
+  const createdCustomerId = existingCustomerId
+    ? null
+    : await createRestCustomerId({
+        shop,
+        accessToken,
+        customerName,
+        phone,
+        email,
+        address
+      });
+  const customerId = existingCustomerId || createdCustomerId;
   const response = await fetch(`https://${shop}/admin/api/2026-04/orders.json`, {
     method: "POST",
     headers: {
@@ -774,7 +842,7 @@ async function createRestOrderDirectly({
       order: {
         email: email || undefined,
         phone,
-        customer: customerPayload,
+        customer: customerId ? { id: customerId } : undefined,
         contact_email: email || undefined,
         financial_status: "pending",
         fulfillment_status: null,
@@ -1371,6 +1439,14 @@ async function handleSubmission(
       } catch (error) {
         draftError = error instanceof Error ? error.message : "Order creation from draft failed.";
       }
+    }
+
+    if (completedOrder?.id && !completedOrder.orderStatusUrl && session.accessToken) {
+      completedOrder.orderStatusUrl = await getRestOrderStatusUrl(
+        session.shop,
+        session.accessToken,
+        completedOrder.id
+      );
     }
 
     await prisma.codSubmission.create({
