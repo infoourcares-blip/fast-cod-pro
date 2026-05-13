@@ -207,12 +207,34 @@
     submitButton.textContent = (container.dataset.formButtonLabel || "Place Fast COD Pro Order") + " - " + amount;
   }
 
+  function getThemeVariantId() {
+    var field = document.querySelector('form[action*="/cart/add"] [name="id"]');
+    return String((field && field.value) || "").replace(/\D/g, "");
+  }
+
+  function rememberVariantCandidate(container, variantId) {
+    var cleanId = String(variantId || "").replace(/\D/g, "");
+    if (!cleanId) return;
+    var current = container.dataset.variantCandidates ? container.dataset.variantCandidates.split(",") : [];
+    if (!current.includes(cleanId)) current.push(cleanId);
+    container.dataset.variantCandidates = current.filter(Boolean).join(",");
+  }
+
+  function variantLooksAvailable(variant) {
+    return variant && variant.id && variant.available !== false;
+  }
+
   function applyProductData(container, product) {
     if (!product) return null;
-    var variant = (product.variants || []).find(function (item) {
-      return item.available !== false;
-    }) || (product.variants || [])[0];
+    var variants = product.variants || [];
+    var selectedId = getThemeVariantId() || container.dataset.variantId || "";
+    var variant = variants.find(function (item) {
+      return String(item.id) === String(selectedId) && variantLooksAvailable(item);
+    }) || variants.find(variantLooksAvailable);
     if (!variant) return null;
+    var candidates = variants.filter(variantLooksAvailable).map(function (item) {
+      return String(item.id);
+    });
 
     var image = product.featured_image || "";
     var title = product.title || container.dataset.productTitle || "Selected product";
@@ -225,6 +247,7 @@
     container.dataset.price = String(amount);
     container.dataset.priceCents = String(variant.price || 0);
     container.dataset.priceDisplay = displayPrice;
+    if (candidates.length) container.dataset.variantCandidates = candidates.join(",");
 
     var titleNode = container.querySelector(".fast-cod-pro-summary-title");
     var priceNode = container.querySelector(".fast-cod-pro-summary-price");
@@ -286,6 +309,17 @@
     };
   }
 
+  function normalizePhone(phone) {
+    var value = String(phone || "").trim();
+    if (!value) return "";
+    if (value.charAt(0) === "+") return value;
+    var digits = value.replace(/\D/g, "");
+    if (digits.length === 10) return "+91" + digits;
+    if (digits.length === 11 && digits.charAt(0) === "0") return "+91" + digits.slice(1);
+    if (digits.length === 12 && digits.indexOf("91") === 0) return "+" + digits;
+    return value;
+  }
+
   function getFieldLabel(field) {
     var label = field.closest ? field.closest(".fast-cod-pro-field") : null;
     var labelText = label ? label.querySelector(".fast-cod-pro-label") : null;
@@ -318,15 +352,35 @@
     return properties;
   }
 
-  async function addToCartForShopifyCheckout(container, form, body) {
-    var variantId = String(body.get("variantId") || container.dataset.variantId || "").replace(/\D/g, "");
-    var quantity = Math.max(1, Number(body.get("quantity") || 1));
-
-    if (!variantId) {
-      throw new Error("Please select an available product variant first.");
+  function variantCandidates(container, body) {
+    var candidates = [
+      getThemeVariantId(),
+      body.get("variantId"),
+      container.dataset.variantId
+    ];
+    if (container.dataset.variantCandidates) {
+      candidates = candidates.concat(container.dataset.variantCandidates.split(","));
     }
+    return candidates
+      .map(function (value) {
+        return String(value || "").replace(/\D/g, "");
+      })
+      .filter(function (value, index, list) {
+        return value && list.indexOf(value) === index;
+      });
+  }
 
-    var response = await fetch("/cart/add.js", {
+  async function clearCartForSingleCodCheckout() {
+    await fetch("/cart/clear.js", {
+      method: "POST",
+      headers: {
+        Accept: "application/json"
+      }
+    });
+  }
+
+  async function addVariantToCart(variantId, quantity, properties) {
+    return fetch("/cart/add.js", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -337,28 +391,49 @@
           {
             id: Number(variantId),
             quantity: quantity,
-            properties: buildLineItemProperties(form)
+            properties: properties
           }
         ]
       })
     });
+  }
 
-    if (!response.ok) {
-      var responseText = await response.text();
-      var message = readCartAddError(responseText);
-      if (/sold out|not available|unavailable/i.test(message)) {
-        throw new Error("Shopify is blocking this variant as sold out. Please check this product's variant inventory, Online Store availability, and location stock in Shopify admin.");
-      }
-      throw new Error(message || "Could not add this product to Shopify cart.");
+  async function addToCartForShopifyCheckout(container, form, body) {
+    var candidates = variantCandidates(container, body);
+    var quantity = Math.max(1, Number(body.get("quantity") || 1));
+    var properties = buildLineItemProperties(form);
+    var lastMessage = "";
+
+    if (!candidates.length) {
+      throw new Error("Please select an available product variant first.");
     }
 
-    return response;
+    await clearCartForSingleCodCheckout();
+
+    for (var i = 0; i < candidates.length; i += 1) {
+      var variantId = candidates[i];
+      var response = await addVariantToCart(variantId, quantity, properties);
+      if (response.ok) {
+        container.dataset.variantId = variantId;
+        body.set("variantId", variantId);
+        return response;
+      }
+
+      lastMessage = readCartAddError(await response.text());
+      rememberVariantCandidate(container, variantId);
+    }
+
+    if (/sold out|not available|unavailable/i.test(lastMessage)) {
+      throw new Error("Shopify is still marking this product variant unavailable on the storefront. In Shopify admin, open this exact variant and check: Track quantity stock, available location stock, Online Store sales channel, and Continue selling when out of stock.");
+    }
+
+    throw new Error(lastMessage || "Could not add this product to Shopify cart.");
   }
 
   async function saveCheckoutAttributes(form, body) {
     var properties = buildLineItemProperties(form);
     var fullName = getBodyValue(body, ["customerName", "name", "fullName", "fullname"]);
-    var phone = getBodyValue(body, ["phone", "phoneNumber", "mobile", "mobileNumber", "alternatePhone"]);
+    var phone = normalizePhone(getBodyValue(body, ["phone", "phoneNumber", "mobile", "mobileNumber", "alternatePhone"]));
     var address = getBodyValue(body, ["address1", "address", "shippingAddress"]);
     var city = getBodyValue(body, ["city"]);
     var pincode = getBodyValue(body, ["pincode", "zip", "postalCode", "postcode"]);
@@ -399,7 +474,7 @@
   function buildPrefilledCheckoutUrl(body) {
     var fullName = getBodyValue(body, ["customerName", "name", "fullName", "fullname"]);
     var name = splitCustomerName(fullName);
-    var phone = getBodyValue(body, ["phone", "phoneNumber", "mobile", "mobileNumber", "alternatePhone"]);
+    var phone = normalizePhone(getBodyValue(body, ["phone", "phoneNumber", "mobile", "mobileNumber", "alternatePhone"]));
     var email = getBodyValue(body, ["email"]);
     var address = getBodyValue(body, ["address1", "address", "shippingAddress"]);
     var address2 = getBodyValue(body, ["address2", "landmark", "apartment"]);
