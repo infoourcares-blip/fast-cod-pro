@@ -32,7 +32,7 @@ type SubmissionContext = {
   tokenIssue?: string;
 };
 
-const SUBMIT_BUILD_ID = "cod-submit-2026-04-29-1";
+const SUBMIT_BUILD_ID = "cod-submit-2026-05-13-phone-contact-1";
 const FREE_ORDER_LIMIT = 100;
 const OFFLINE_TOKEN_REFRESH_WINDOW_MS = 5 * 60 * 1000;
 const TOKEN_EXCHANGE_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:token-exchange";
@@ -510,7 +510,6 @@ async function createOrderDirectly({
   accessToken,
   customerName,
   phone,
-  email,
   address1,
   city,
   pincode,
@@ -525,7 +524,6 @@ async function createOrderDirectly({
   accessToken?: string | null;
   customerName: string;
   phone: string;
-  email: string;
   address1: string;
   city: string;
   pincode: string;
@@ -547,7 +545,6 @@ async function createOrderDirectly({
       accessToken,
       customerName,
       phone,
-      email,
       address1,
       city,
       pincode,
@@ -583,7 +580,6 @@ async function createOrderDirectly({
           note: [
             notes,
             `Customer name: ${customerName}`,
-            email ? `Customer email: ${email}` : "",
             addressText ? `Delivery address: ${addressText}` : "",
             "Payment method: Cash on Delivery",
             "Source: Fast COD Pro"
@@ -619,7 +615,6 @@ async function createOrderDirectly({
             { key: "customer_name", value: customerName },
             { key: "payment_method", value: "Cash on Delivery" },
             { key: "customer_phone", value: phone },
-            { key: "customer_email", value: email },
             { key: "delivery_address", value: addressText },
             { key: "city", value: cleanCity },
             { key: "pincode", value: postalCode },
@@ -669,7 +664,6 @@ async function createRestOrderDirectly({
   accessToken,
   customerName,
   phone,
-  email,
   address1,
   city,
   pincode,
@@ -682,7 +676,6 @@ async function createRestOrderDirectly({
   accessToken: string;
   customerName: string;
   phone: string;
-  email: string;
   address1: string;
   city: string;
   pincode: string;
@@ -733,7 +726,6 @@ async function createRestOrderDirectly({
         note: [
           notes,
           `Customer name: ${customerName}`,
-          email ? `Customer email: ${email}` : "",
           addressText ? `Delivery address: ${addressText}` : "",
           "Payment method: Cash on Delivery",
           "Source: Fast COD Pro"
@@ -768,7 +760,6 @@ async function createRestOrderDirectly({
           { name: "customer_name", value: customerName },
           { name: "payment_method", value: "Cash on Delivery" },
           { name: "customer_phone", value: phone },
-          { name: "customer_email", value: email },
           { name: "delivery_address", value: addressText },
           { name: "city", value: cleanCity },
           { name: "pincode", value: postalCode },
@@ -1062,7 +1053,7 @@ async function handleSubmission(
       | undefined;
     let draftError: string | null = null;
 
-    if (hasOrderCreateScopes(session.scope) && !hasDraftOrderScopes(session.scope)) {
+    if (hasOrderCreateScopes(session.scope)) {
       try {
         const directOrderResult = await createOrderDirectly({
           admin,
@@ -1070,7 +1061,6 @@ async function handleSubmission(
           accessToken: session.accessToken,
           customerName,
           phone,
-          email,
           address1,
           city,
           pincode,
@@ -1122,7 +1112,6 @@ async function handleSubmission(
             input: {
               note: [
                 notes,
-                email ? `Customer email: ${email}` : "",
                 rawPhone && rawPhone !== phone ? `Original phone: ${rawPhone}` : ""
               ]
                 .filter(Boolean)
@@ -1301,7 +1290,6 @@ async function handleSubmission(
                 accessToken: session.accessToken,
                 customerName,
                 phone,
-                email,
                 address1,
                 city,
                 pincode,
