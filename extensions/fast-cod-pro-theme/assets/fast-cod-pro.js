@@ -212,14 +212,6 @@
     return String((field && field.value) || "").replace(/\D/g, "");
   }
 
-  function rememberVariantCandidate(container, variantId) {
-    var cleanId = String(variantId || "").replace(/\D/g, "");
-    if (!cleanId) return;
-    var current = container.dataset.variantCandidates ? container.dataset.variantCandidates.split(",") : [];
-    if (!current.includes(cleanId)) current.push(cleanId);
-    container.dataset.variantCandidates = current.filter(Boolean).join(",");
-  }
-
   function variantLooksAvailable(variant) {
     return variant && variant.id && variant.available !== false;
   }
@@ -280,391 +272,6 @@
       console.error("Fast COD Pro product price fetch failed", error);
       return null;
     }
-  }
-
-  function readCartAddError(responseText) {
-    try {
-      var parsed = JSON.parse(responseText);
-      return parsed.description || parsed.message || parsed.error || responseText;
-    } catch (_error) {
-      return responseText;
-    }
-  }
-
-  function getBodyValue(body, names) {
-    for (var i = 0; i < names.length; i += 1) {
-      var value = String(body.get(names[i]) || "").trim();
-      if (value) return value;
-    }
-    return "";
-  }
-
-  function splitCustomerName(fullName) {
-    var parts = String(fullName || "").trim().split(/\s+/).filter(Boolean);
-    if (!parts.length) return { firstName: "", lastName: "" };
-    if (parts.length === 1) return { firstName: parts[0], lastName: "-" };
-    return {
-      firstName: parts.slice(0, -1).join(" "),
-      lastName: parts[parts.length - 1]
-    };
-  }
-
-  function normalizePhone(phone) {
-    var value = String(phone || "").trim();
-    if (!value) return "";
-    if (value.charAt(0) === "+") return value;
-    var digits = value.replace(/\D/g, "");
-    if (digits.length === 10) return "+91" + digits;
-    if (digits.length === 11 && digits.charAt(0) === "0") return "+91" + digits.slice(1);
-    if (digits.length === 12 && digits.indexOf("91") === 0) return "+" + digits;
-    return value;
-  }
-
-  function inferIndiaProvinceCode(city, pincode, state) {
-    var cleanState = String(state || "").trim().toLowerCase();
-    var cleanCity = String(city || "").trim().toLowerCase();
-    var pinPrefix = String(pincode || "").replace(/\D/g, "").slice(0, 2);
-    var byName = {
-      "andhra pradesh": "AP",
-      "arunachal pradesh": "AR",
-      assam: "AS",
-      bihar: "BR",
-      chandigarh: "CH",
-      chhattisgarh: "CG",
-      delhi: "DL",
-      goa: "GA",
-      gujarat: "GJ",
-      haryana: "HR",
-      "himachal pradesh": "HP",
-      jharkhand: "JH",
-      karnataka: "KA",
-      kerala: "KL",
-      "madhya pradesh": "MP",
-      maharashtra: "MH",
-      manipur: "MN",
-      meghalaya: "ML",
-      mizoram: "MZ",
-      nagaland: "NL",
-      odisha: "OR",
-      puducherry: "PY",
-      punjab: "PB",
-      rajasthan: "RJ",
-      sikkim: "SK",
-      "tamil nadu": "TN",
-      telangana: "TS",
-      tripura: "TR",
-      "uttar pradesh": "UP",
-      uttarakhand: "UK",
-      "west bengal": "WB"
-    };
-    var byPin = {
-      "11": "DL",
-      "12": "HR",
-      "13": "HR",
-      "14": "PB",
-      "15": "PB",
-      "16": "CH",
-      "17": "HP",
-      "18": "JK",
-      "19": "JK",
-      "20": "UP",
-      "21": "UP",
-      "22": "UP",
-      "23": "UP",
-      "24": "UP",
-      "25": "UP",
-      "26": "UP",
-      "27": "UP",
-      "28": "UP",
-      "30": "RJ",
-      "31": "RJ",
-      "32": "RJ",
-      "33": "RJ",
-      "34": "RJ",
-      "36": "GJ",
-      "37": "GJ",
-      "38": "GJ",
-      "39": "GJ",
-      "40": "MH",
-      "41": "MH",
-      "42": "MH",
-      "43": "MH",
-      "44": "MH",
-      "45": "MP",
-      "46": "MP",
-      "47": "MP",
-      "48": "MP",
-      "49": "CG",
-      "50": "TS",
-      "51": "AP",
-      "52": "AP",
-      "53": "AP",
-      "56": "KA",
-      "57": "KA",
-      "58": "KA",
-      "59": "KA",
-      "60": "TN",
-      "61": "TN",
-      "62": "TN",
-      "63": "TN",
-      "64": "TN",
-      "67": "KL",
-      "68": "KL",
-      "69": "KL",
-      "70": "WB",
-      "71": "WB",
-      "72": "WB",
-      "73": "WB",
-      "75": "OR",
-      "76": "OR",
-      "77": "OR",
-      "78": "AS",
-      "79": "ML",
-      "80": "BR",
-      "81": "BR",
-      "82": "JH",
-      "83": "JH",
-      "84": "BR",
-      "85": "BR"
-    };
-
-    return byName[cleanState] || byName[cleanCity] || byPin[pinPrefix] || "";
-  }
-
-  function indiaProvinceName(provinceCode) {
-    var names = {
-      AP: "Andhra Pradesh",
-      AR: "Arunachal Pradesh",
-      AS: "Assam",
-      BR: "Bihar",
-      CH: "Chandigarh",
-      CG: "Chhattisgarh",
-      DL: "Delhi",
-      GA: "Goa",
-      GJ: "Gujarat",
-      HR: "Haryana",
-      HP: "Himachal Pradesh",
-      JK: "Jammu and Kashmir",
-      JH: "Jharkhand",
-      KA: "Karnataka",
-      KL: "Kerala",
-      MP: "Madhya Pradesh",
-      MH: "Maharashtra",
-      MN: "Manipur",
-      ML: "Meghalaya",
-      MZ: "Mizoram",
-      NL: "Nagaland",
-      OR: "Odisha",
-      PY: "Puducherry",
-      PB: "Punjab",
-      RJ: "Rajasthan",
-      SK: "Sikkim",
-      TN: "Tamil Nadu",
-      TS: "Telangana",
-      TR: "Tripura",
-      UP: "Uttar Pradesh",
-      UK: "Uttarakhand",
-      WB: "West Bengal"
-    };
-    return names[provinceCode] || "";
-  }
-
-  function getFieldLabel(field) {
-    var label = field.closest ? field.closest(".fast-cod-pro-field") : null;
-    var labelText = label ? label.querySelector(".fast-cod-pro-label") : null;
-    return String((labelText && labelText.textContent) || field.name || "")
-      .replace("*", "")
-      .trim();
-  }
-
-  function buildLineItemProperties(form) {
-    var properties = {
-      "_Fast COD Pro": "Submitted with Fast COD Pro form"
-    };
-    var ignoredNames = {
-      quantity: true,
-      quantityDisplay: true,
-      variantId: true,
-      productTitle: true,
-      price: true,
-      shop: true
-    };
-    var fields = form.querySelectorAll("input, textarea, select");
-
-    fields.forEach(function (field) {
-      if (!field.name || ignoredNames[field.name] || field.type === "hidden") return;
-      var value = String(field.value || "").trim();
-      if (!value) return;
-      properties[getFieldLabel(field)] = value;
-    });
-
-    return properties;
-  }
-
-  function variantCandidates(container, body) {
-    var candidates = [
-      getThemeVariantId(),
-      body.get("variantId"),
-      container.dataset.variantId
-    ];
-    if (container.dataset.variantCandidates) {
-      candidates = candidates.concat(container.dataset.variantCandidates.split(","));
-    }
-    return candidates
-      .map(function (value) {
-        return String(value || "").replace(/\D/g, "");
-      })
-      .filter(function (value, index, list) {
-        return value && list.indexOf(value) === index;
-      });
-  }
-
-  async function clearCartForSingleCodCheckout() {
-    await fetch("/cart/clear.js", {
-      method: "POST",
-      headers: {
-        Accept: "application/json"
-      }
-    });
-  }
-
-  async function addVariantToCart(variantId, quantity, properties) {
-    return fetch("/cart/add.js", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json"
-      },
-      body: JSON.stringify({
-        items: [
-          {
-            id: Number(variantId),
-            quantity: quantity,
-            properties: properties
-          }
-        ]
-      })
-    });
-  }
-
-  async function addToCartForShopifyCheckout(container, form, body) {
-    var candidates = variantCandidates(container, body);
-    var quantity = Math.max(1, Number(body.get("quantity") || 1));
-    var properties = buildLineItemProperties(form);
-    var lastMessage = "";
-
-    if (!candidates.length) {
-      throw new Error("Please select an available product variant first.");
-    }
-
-    await clearCartForSingleCodCheckout();
-
-    for (var i = 0; i < candidates.length; i += 1) {
-      var variantId = candidates[i];
-      var response = await addVariantToCart(variantId, quantity, properties);
-      if (response.ok) {
-        container.dataset.variantId = variantId;
-        body.set("variantId", variantId);
-        return response;
-      }
-
-      lastMessage = readCartAddError(await response.text());
-      rememberVariantCandidate(container, variantId);
-    }
-
-    if (/sold out|not available|unavailable/i.test(lastMessage)) {
-      throw new Error("Shopify is still marking this product variant unavailable on the storefront. In Shopify admin, open this exact variant and check: Track quantity stock, available location stock, Online Store sales channel, and Continue selling when out of stock.");
-    }
-
-    throw new Error(lastMessage || "Could not add this product to Shopify cart.");
-  }
-
-  async function saveCheckoutAttributes(form, body) {
-    var properties = buildLineItemProperties(form);
-    var fullName = getBodyValue(body, ["customerName", "name", "fullName", "fullname"]);
-    var phone = normalizePhone(getBodyValue(body, ["phone", "phoneNumber", "mobile", "mobileNumber", "alternatePhone"]));
-    var address = getBodyValue(body, ["address1", "address", "shippingAddress"]);
-    var city = getBodyValue(body, ["city"]);
-    var pincode = getBodyValue(body, ["pincode", "zip", "postalCode", "postcode"]);
-    var noteParts = [
-      fullName ? "Name: " + fullName : "",
-      phone ? "Phone: " + phone : "",
-      address ? "Address: " + address : "",
-      city ? "City: " + city : "",
-      pincode ? "Pincode: " + pincode : ""
-    ].filter(Boolean);
-
-    var attributes = Object.assign({}, properties, {
-      "Fast COD Pro form": "Completed",
-      "COD customer name": fullName,
-      "COD phone": phone,
-      "COD address": address,
-      "COD city": city,
-      "COD pincode": pincode
-    });
-
-    try {
-      await fetch("/cart/update.js", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json"
-        },
-        body: JSON.stringify({
-          note: noteParts.join("\n"),
-          attributes: attributes
-        })
-      });
-    } catch (error) {
-      console.error("Fast COD Pro cart attributes update failed", error);
-    }
-  }
-
-  function buildPrefilledCheckoutUrl(body) {
-    var fullName = getBodyValue(body, ["customerName", "name", "fullName", "fullname"]);
-    var name = splitCustomerName(fullName);
-    var phone = normalizePhone(getBodyValue(body, ["phone", "phoneNumber", "mobile", "mobileNumber", "alternatePhone"]));
-    var email = getBodyValue(body, ["email"]);
-    var address = getBodyValue(body, ["address1", "address", "shippingAddress"]);
-    var address2 = getBodyValue(body, ["address2", "landmark", "apartment"]);
-    var city = getBodyValue(body, ["city"]);
-    var pincode = getBodyValue(body, ["pincode", "zip", "postalCode", "postcode"]);
-    var state = getBodyValue(body, ["province", "state"]);
-    var country = getBodyValue(body, ["country"]) || "India";
-    var countryCode = country.toLowerCase() === "india" ? "IN" : "";
-    var provinceCode = countryCode === "IN" ? inferIndiaProvinceCode(city, pincode, state) : "";
-    var provinceName = state || indiaProvinceName(provinceCode);
-    var params = new URLSearchParams();
-
-    if (email) params.set("checkout[email]", email);
-    if (phone) params.set("checkout[phone]", phone);
-    if (name.firstName) params.set("checkout[shipping_address][first_name]", name.firstName);
-    if (name.lastName) params.set("checkout[shipping_address][last_name]", name.lastName);
-    if (address) params.set("checkout[shipping_address][address1]", address);
-    if (address2) params.set("checkout[shipping_address][address2]", address2);
-    if (city) params.set("checkout[shipping_address][city]", city);
-    if (pincode) params.set("checkout[shipping_address][zip]", pincode);
-    if (provinceName) params.set("checkout[shipping_address][province]", provinceName);
-    if (provinceCode) params.set("checkout[shipping_address][province_code]", provinceCode);
-    if (country) params.set("checkout[shipping_address][country]", country);
-    if (countryCode) params.set("checkout[shipping_address][country_code]", countryCode);
-    if (phone) {
-      params.set("checkout[shipping_address][phone]", phone);
-      params.set("checkout[billing_address][phone]", phone);
-    }
-    if (name.firstName) params.set("checkout[billing_address][first_name]", name.firstName);
-    if (name.lastName) params.set("checkout[billing_address][last_name]", name.lastName);
-    if (address) params.set("checkout[billing_address][address1]", address);
-    if (address2) params.set("checkout[billing_address][address2]", address2);
-    if (city) params.set("checkout[billing_address][city]", city);
-    if (pincode) params.set("checkout[billing_address][zip]", pincode);
-    if (provinceName) params.set("checkout[billing_address][province]", provinceName);
-    if (provinceCode) params.set("checkout[billing_address][province_code]", provinceCode);
-    if (country) params.set("checkout[billing_address][country]", country);
-    if (countryCode) params.set("checkout[billing_address][country_code]", countryCode);
-
-    var query = params.toString();
-    return query ? "/checkout?" + query : "/checkout";
   }
 
   async function enhanceFields(container, endpoint, accentColor) {
@@ -815,7 +422,7 @@
       if (!submitButton) return;
       submitInProgress = true;
       status.hidden = false;
-      status.textContent = "Adding your details to Shopify Checkout...";
+      status.textContent = "Creating your COD order...";
       status.style.color = "#0f172a";
       submitButton.disabled = true;
 
@@ -829,13 +436,43 @@
       }
 
       try {
+        if (!submitUrl) {
+          throw new Error("Missing Fast COD Pro submit URL.");
+        }
+
         await fetchProductData(container);
         body.set("variantId", container.dataset.variantId || body.get("variantId") || "");
-        await addToCartForShopifyCheckout(container, form, body);
-        await saveCheckoutAttributes(form, body);
-        status.textContent = "Opening secure Shopify Checkout...";
+        var submitResponse = await fetch(submitUrl + "?" + body.toString(), {
+          method: "GET",
+          headers: { Accept: "application/json" }
+        });
+        var responseText = await submitResponse.text();
+        var result = {};
+
+        try {
+          result = JSON.parse(responseText);
+        } catch (_error) {
+          result = { error: responseText || "Unexpected response from COD endpoint." };
+        }
+
+        if (!submitResponse.ok || result.orderCreated === false) {
+          status.textContent = result.error || result.fallbackReason || result.message || "Submission failed.";
+          status.style.color = "#b91c1c";
+          return;
+        }
+
+        status.textContent = result.message || (result.orderName ? "Order " + result.orderName + " created." : "COD order submitted.");
         status.style.color = "#047857";
-        window.location.href = buildPrefilledCheckoutUrl(body);
+        if (result.orderStatusUrl || result.confirmationUrl || result.redirectUrl) {
+          window.location.href = result.orderStatusUrl || result.confirmationUrl || result.redirectUrl;
+          return;
+        }
+
+        form.innerHTML =
+          '<div class="fast-cod-pro-thank-you">' +
+          '<strong>Thank you!</strong>' +
+          '<span>Your COD order has been confirmed' + (result.orderName ? " as " + escapeHtml(result.orderName) : "") + ".</span>" +
+          "</div>";
       } catch (error) {
         status.textContent = error && error.message ? error.message : "Could not submit COD order. Please try again.";
         status.style.color = "#b91c1c";

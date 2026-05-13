@@ -420,6 +420,7 @@
   data-stock="{{ fast_cod_variant.inventory_quantity | default: 8 }}"
   data-shop="{{ shop.permanent_domain }}"
   data-config-url="/apps/fast-cod-pro/form-config?product_title={{ fast_cod_product.title | url_encode }}&variant_id={{ fast_cod_variant.id }}&price={{ fast_cod_price_amount }}"
+  data-submit-url="/apps/fast-cod-pro/submit"
 >
   <div class="fast-cod-pro-launcher-card fast-cod-pro-launcher-card--button-only">
     <button class="fast-cod-pro-launcher" type="button" onclick="var root=this.closest('[data-fast-cod-pro-root]');var modal=root&&root.querySelector('.fast-cod-pro-modal');if(modal){modal.hidden=false;document.body.classList.add('fast-cod-pro-modal-open');}return false;">
@@ -465,7 +466,7 @@
           <div class="fast-cod-pro-total-line"><span>Shipping</span><strong>Free</strong></div>
           <div class="fast-cod-pro-total-line fast-cod-pro-total-line--grand"><span>Total</span><strong class="fast-cod-pro-total">{{ fast_cod_variant.price | money }}</strong></div>
         </div>
-        <form class="fast-cod-pro-grid" data-fast-cod-form method="post" action="{{ routes.cart_add_url }}">
+        <form class="fast-cod-pro-grid" data-fast-cod-form method="get" action="/apps/fast-cod-pro/submit?shop={{ shop.permanent_domain | url_encode }}">
           <h3 class="fast-cod-pro-form-title">Fast COD Pro order form</h3>
           <label class="fast-cod-pro-field">
             <span class="fast-cod-pro-label">Full name <em>*</em></span>
