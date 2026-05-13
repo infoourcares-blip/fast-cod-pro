@@ -553,10 +553,6 @@ async function createOrderDirectly({
     if (restOrderResult.order?.id) {
       return restOrderResult;
     }
-
-    if (restOrderResult.error) {
-      return restOrderResult;
-    }
   }
 
   const response = await admin.graphql(
@@ -715,12 +711,6 @@ async function createRestOrderDirectly({
       order: {
         email: email || undefined,
         phone,
-        customer: {
-          first_name: firstName,
-          last_name: lastName || "-",
-          email: email || undefined,
-          phone
-        },
         contact_email: email || undefined,
         financial_status: "pending",
         fulfillment_status: null,
