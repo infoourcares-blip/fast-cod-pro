@@ -320,6 +320,155 @@
     return value;
   }
 
+  function inferIndiaProvinceCode(city, pincode, state) {
+    var cleanState = String(state || "").trim().toLowerCase();
+    var cleanCity = String(city || "").trim().toLowerCase();
+    var pinPrefix = String(pincode || "").replace(/\D/g, "").slice(0, 2);
+    var byName = {
+      "andhra pradesh": "AP",
+      "arunachal pradesh": "AR",
+      assam: "AS",
+      bihar: "BR",
+      chandigarh: "CH",
+      chhattisgarh: "CG",
+      delhi: "DL",
+      goa: "GA",
+      gujarat: "GJ",
+      haryana: "HR",
+      "himachal pradesh": "HP",
+      jharkhand: "JH",
+      karnataka: "KA",
+      kerala: "KL",
+      "madhya pradesh": "MP",
+      maharashtra: "MH",
+      manipur: "MN",
+      meghalaya: "ML",
+      mizoram: "MZ",
+      nagaland: "NL",
+      odisha: "OR",
+      puducherry: "PY",
+      punjab: "PB",
+      rajasthan: "RJ",
+      sikkim: "SK",
+      "tamil nadu": "TN",
+      telangana: "TS",
+      tripura: "TR",
+      "uttar pradesh": "UP",
+      uttarakhand: "UK",
+      "west bengal": "WB"
+    };
+    var byPin = {
+      "11": "DL",
+      "12": "HR",
+      "13": "HR",
+      "14": "PB",
+      "15": "PB",
+      "16": "CH",
+      "17": "HP",
+      "18": "JK",
+      "19": "JK",
+      "20": "UP",
+      "21": "UP",
+      "22": "UP",
+      "23": "UP",
+      "24": "UP",
+      "25": "UP",
+      "26": "UP",
+      "27": "UP",
+      "28": "UP",
+      "30": "RJ",
+      "31": "RJ",
+      "32": "RJ",
+      "33": "RJ",
+      "34": "RJ",
+      "36": "GJ",
+      "37": "GJ",
+      "38": "GJ",
+      "39": "GJ",
+      "40": "MH",
+      "41": "MH",
+      "42": "MH",
+      "43": "MH",
+      "44": "MH",
+      "45": "MP",
+      "46": "MP",
+      "47": "MP",
+      "48": "MP",
+      "49": "CG",
+      "50": "TS",
+      "51": "AP",
+      "52": "AP",
+      "53": "AP",
+      "56": "KA",
+      "57": "KA",
+      "58": "KA",
+      "59": "KA",
+      "60": "TN",
+      "61": "TN",
+      "62": "TN",
+      "63": "TN",
+      "64": "TN",
+      "67": "KL",
+      "68": "KL",
+      "69": "KL",
+      "70": "WB",
+      "71": "WB",
+      "72": "WB",
+      "73": "WB",
+      "75": "OR",
+      "76": "OR",
+      "77": "OR",
+      "78": "AS",
+      "79": "ML",
+      "80": "BR",
+      "81": "BR",
+      "82": "JH",
+      "83": "JH",
+      "84": "BR",
+      "85": "BR"
+    };
+
+    return byName[cleanState] || byName[cleanCity] || byPin[pinPrefix] || "";
+  }
+
+  function indiaProvinceName(provinceCode) {
+    var names = {
+      AP: "Andhra Pradesh",
+      AR: "Arunachal Pradesh",
+      AS: "Assam",
+      BR: "Bihar",
+      CH: "Chandigarh",
+      CG: "Chhattisgarh",
+      DL: "Delhi",
+      GA: "Goa",
+      GJ: "Gujarat",
+      HR: "Haryana",
+      HP: "Himachal Pradesh",
+      JK: "Jammu and Kashmir",
+      JH: "Jharkhand",
+      KA: "Karnataka",
+      KL: "Kerala",
+      MP: "Madhya Pradesh",
+      MH: "Maharashtra",
+      MN: "Manipur",
+      ML: "Meghalaya",
+      MZ: "Mizoram",
+      NL: "Nagaland",
+      OR: "Odisha",
+      PY: "Puducherry",
+      PB: "Punjab",
+      RJ: "Rajasthan",
+      SK: "Sikkim",
+      TN: "Tamil Nadu",
+      TS: "Telangana",
+      TR: "Tripura",
+      UP: "Uttar Pradesh",
+      UK: "Uttarakhand",
+      WB: "West Bengal"
+    };
+    return names[provinceCode] || "";
+  }
+
   function getFieldLabel(field) {
     var label = field.closest ? field.closest(".fast-cod-pro-field") : null;
     var labelText = label ? label.querySelector(".fast-cod-pro-label") : null;
@@ -482,6 +631,9 @@
     var pincode = getBodyValue(body, ["pincode", "zip", "postalCode", "postcode"]);
     var state = getBodyValue(body, ["province", "state"]);
     var country = getBodyValue(body, ["country"]) || "India";
+    var countryCode = country.toLowerCase() === "india" ? "IN" : "";
+    var provinceCode = countryCode === "IN" ? inferIndiaProvinceCode(city, pincode, state) : "";
+    var provinceName = state || indiaProvinceName(provinceCode);
     var params = new URLSearchParams();
 
     if (email) params.set("checkout[email]", email);
@@ -492,8 +644,10 @@
     if (address2) params.set("checkout[shipping_address][address2]", address2);
     if (city) params.set("checkout[shipping_address][city]", city);
     if (pincode) params.set("checkout[shipping_address][zip]", pincode);
-    if (state) params.set("checkout[shipping_address][province]", state);
+    if (provinceName) params.set("checkout[shipping_address][province]", provinceName);
+    if (provinceCode) params.set("checkout[shipping_address][province_code]", provinceCode);
     if (country) params.set("checkout[shipping_address][country]", country);
+    if (countryCode) params.set("checkout[shipping_address][country_code]", countryCode);
     if (phone) {
       params.set("checkout[shipping_address][phone]", phone);
       params.set("checkout[billing_address][phone]", phone);
@@ -504,8 +658,10 @@
     if (address2) params.set("checkout[billing_address][address2]", address2);
     if (city) params.set("checkout[billing_address][city]", city);
     if (pincode) params.set("checkout[billing_address][zip]", pincode);
-    if (state) params.set("checkout[billing_address][province]", state);
+    if (provinceName) params.set("checkout[billing_address][province]", provinceName);
+    if (provinceCode) params.set("checkout[billing_address][province_code]", provinceCode);
     if (country) params.set("checkout[billing_address][country]", country);
+    if (countryCode) params.set("checkout[billing_address][country_code]", countryCode);
 
     var query = params.toString();
     return query ? "/checkout?" + query : "/checkout";
