@@ -419,7 +419,42 @@ function cleanCityName(city: string, postalCode: string) {
     cleaned = cleaned.replace(new RegExp(`\\b${postal.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "g"), "");
   }
 
-  return cleaned.replace(/^[,\s-]+|[,\s-]+$/g, "").replace(/\s+/g, " ").trim();
+  return titleCaseAddressPart(cleaned.replace(/^[,\s-]+|[,\s-]+$/g, "").replace(/\s+/g, " ").trim());
+}
+
+function titleCaseAddressPart(value: string) {
+  return normalizeSpaces(value).replace(/\b[a-z]/g, (letter) => letter.toUpperCase());
+}
+
+function inferIndianProvince(postalCode: string, city: string) {
+  const postalPrefix = Number(String(postalCode || "").trim().slice(0, 2));
+  const cityKey = normalizeSpaces(city).toLowerCase();
+
+  if (cityKey.includes("delhi") || postalPrefix === 11) {
+    return { name: "Delhi", code: "DL" };
+  }
+
+  if (postalPrefix >= 12 && postalPrefix <= 13) return { name: "Haryana", code: "HR" };
+  if (postalPrefix >= 14 && postalPrefix <= 16) return { name: "Punjab", code: "PB" };
+  if (postalPrefix === 17) return { name: "Himachal Pradesh", code: "HP" };
+  if (postalPrefix >= 18 && postalPrefix <= 19) return { name: "Jammu and Kashmir", code: "JK" };
+  if (postalPrefix >= 20 && postalPrefix <= 28) return { name: "Uttar Pradesh", code: "UP" };
+  if (postalPrefix >= 30 && postalPrefix <= 34) return { name: "Rajasthan", code: "RJ" };
+  if (postalPrefix >= 36 && postalPrefix <= 39) return { name: "Gujarat", code: "GJ" };
+  if (postalPrefix >= 40 && postalPrefix <= 44) return { name: "Maharashtra", code: "MH" };
+  if (postalPrefix >= 45 && postalPrefix <= 48) return { name: "Madhya Pradesh", code: "MP" };
+  if (postalPrefix === 49) return { name: "Chhattisgarh", code: "CG" };
+  if (postalPrefix === 50) return { name: "Telangana", code: "TS" };
+  if (postalPrefix >= 51 && postalPrefix <= 53) return { name: "Andhra Pradesh", code: "AP" };
+  if (postalPrefix >= 56 && postalPrefix <= 59) return { name: "Karnataka", code: "KA" };
+  if (postalPrefix >= 60 && postalPrefix <= 64) return { name: "Tamil Nadu", code: "TN" };
+  if (postalPrefix >= 67 && postalPrefix <= 69) return { name: "Kerala", code: "KL" };
+  if (postalPrefix >= 70 && postalPrefix <= 74) return { name: "West Bengal", code: "WB" };
+  if (postalPrefix >= 75 && postalPrefix <= 77) return { name: "Odisha", code: "OD" };
+  if (postalPrefix === 78) return { name: "Assam", code: "AS" };
+  if (postalPrefix >= 80 && postalPrefix <= 85) return { name: "Bihar", code: "BR" };
+
+  return { name: "", code: "" };
 }
 
 function firstSubmittedValue(
@@ -611,6 +646,8 @@ async function createRestPhoneCustomer({
     phone: string;
     country: string;
     country_code: string;
+    province?: string;
+    province_code?: string;
   };
 }) {
   const { firstName, lastName } = splitCustomerName(customerName);
@@ -689,6 +726,7 @@ async function createOrderDirectly({
   const postalCode = inferPostalCode(pincode, address1);
   const cleanAddress1 = cleanAddressLine(address1, postalCode, city);
   const cleanCity = cleanCityName(city, postalCode);
+  const province = inferIndianProvince(postalCode, cleanCity);
   const addressText = visibleAddress(cleanAddress1, cleanCity, postalCode);
   const totalAmount = moneyAmount(price * Math.max(1, quantity));
 
@@ -771,6 +809,7 @@ async function createOrderDirectly({
             city: cleanCity,
             phone,
             zip: postalCode,
+            provinceCode: province.code || undefined,
             countryCode: "IN"
           },
           billingAddress: {
@@ -780,6 +819,7 @@ async function createOrderDirectly({
             city: cleanCity,
             phone,
             zip: postalCode,
+            provinceCode: province.code || undefined,
             countryCode: "IN"
           },
           customAttributes: [
@@ -877,6 +917,7 @@ async function createRestOrderDirectly({
   const postalCode = inferPostalCode(pincode, address1);
   const cleanAddress1 = cleanAddressLine(address1, postalCode, city);
   const cleanCity = cleanCityName(city, postalCode);
+  const province = inferIndianProvince(postalCode, cleanCity);
   const addressText = visibleAddress(cleanAddress1, cleanCity, postalCode);
   const totalAmount = moneyAmount(price * Math.max(1, quantity));
   const address = {
@@ -887,7 +928,9 @@ async function createRestOrderDirectly({
     zip: postalCode,
     phone,
     country: "India",
-    country_code: "IN"
+    country_code: "IN",
+    province: province.name || undefined,
+    province_code: province.code || undefined
   };
   const createdPhoneCustomer = await createRestPhoneCustomer({
     shop,
@@ -1209,6 +1252,7 @@ async function handleSubmission(
     const postalCode = inferPostalCode(pincode, address1);
     const cleanAddress1 = cleanAddressLine(address1, postalCode, city);
     const cleanCity = cleanCityName(city, postalCode);
+    const province = inferIndianProvince(postalCode, cleanCity);
     const cleanAddressText = visibleAddress(cleanAddress1, cleanCity, postalCode);
     const variantId = rawVariantId.startsWith("gid://shopify/ProductVariant/")
       ? rawVariantId
@@ -1344,6 +1388,7 @@ async function handleSubmission(
                 city: cleanCity || city || undefined,
                 phone: phone || undefined,
                 zip: postalCode || undefined,
+                provinceCode: province.code || undefined,
                 countryCode: "IN"
               },
               billingAddress: {
@@ -1353,6 +1398,7 @@ async function handleSubmission(
                 city: cleanCity || city || undefined,
                 phone: phone || undefined,
                 zip: postalCode || undefined,
+                provinceCode: province.code || undefined,
                 countryCode: "IN"
               },
               lineItems: [
