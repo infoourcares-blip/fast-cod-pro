@@ -423,7 +423,7 @@
   data-submit-url="/apps/fast-cod-pro/submit"
 >
   <div class="fast-cod-pro-launcher-card fast-cod-pro-launcher-card--button-only">
-    <button class="fast-cod-pro-launcher" type="button" onclick="var root=this.closest('[data-fast-cod-pro-root]');var modal=root&&root.querySelector('.fast-cod-pro-modal');if(modal){modal.hidden=false;document.body.classList.add('fast-cod-pro-modal-open');}return false;">
+    <button class="fast-cod-pro-launcher" type="button" onclick="if(window.FastCodProOpen){return window.FastCodProOpen(this,event);}var root=this.closest('[data-fast-cod-pro-root]');var modal=root&&root.querySelector('.fast-cod-pro-modal');if(modal){modal.hidden=false;document.body.classList.add('fast-cod-pro-modal-open');}return false;">
       <span class="fast-cod-pro-launcher-icon">🛒</span>
       <span class="fast-cod-pro-launcher-label">Order with Fast COD Pro</span>
     </button>

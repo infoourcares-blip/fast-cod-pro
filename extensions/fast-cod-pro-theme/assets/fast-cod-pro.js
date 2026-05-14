@@ -1,4 +1,6 @@
 (function () {
+  var rootCounter = 0;
+
   function escapeHtml(value) {
     return String(value || "")
       .replaceAll("&", "&amp;")
@@ -384,7 +386,12 @@
     }
     applyLauncherAnimation(launcher, "none");
 
-    launcher.setAttribute("onclick", "var root=this.closest('[data-fast-cod-pro-root]');var modal=root&&root.querySelector('.fast-cod-pro-modal');if(modal){modal.hidden=false;document.body.classList.add('fast-cod-pro-modal-open');}return false;");
+    var rootId = container.dataset.fastCodRootId || ("fast-cod-root-" + Date.now() + "-" + rootCounter++);
+    container.dataset.fastCodRootId = rootId;
+    launcher.dataset.fastCodRootId = rootId;
+    window.FastCodProRoots = window.FastCodProRoots || {};
+    window.FastCodProRoots[rootId] = container;
+    launcher.setAttribute("onclick", "return window.FastCodProOpen?window.FastCodProOpen(this,event):false");
 
     if (!container.querySelector(".fast-cod-pro-modal")) {
       container.insertAdjacentHTML("beforeend", buildModalHtml(productTitle, productImage, displayPrice, variantId, price, submitUrl, shopDomain));
@@ -451,8 +458,10 @@
 
       var portal = document.createElement("div");
       portal.setAttribute("data-fast-cod-pro-root", "");
+      portal.dataset.fastCodRootId = rootId;
       portal.className = "fast-cod-pro-portal-root";
       portal.__fastCodProSubmit = submitCodOrder;
+      portal.__fastCodProOpen = openModal;
       syncPortalDesign(portal);
       document.body.appendChild(portal);
       portal.appendChild(modal);
@@ -480,6 +489,7 @@
 
     launcher.addEventListener("click", openModal);
     launcher.addEventListener("touchend", openModal, { passive: false });
+    container.__fastCodProOpen = openModal;
     closeButtons.forEach(function (button) {
       button.addEventListener("click", closeModal);
     });
@@ -604,12 +614,36 @@
   }
 
   window.FastCodProSubmit = function (button, event) {
-    var container = button && button.closest ? button.closest("[data-fast-cod-pro-root]") : null;
+    var rootId = button && button.closest ? (button.closest("[data-fast-cod-pro-root]") || {}).dataset.fastCodRootId : "";
+    var container = rootId && window.FastCodProRoots ? window.FastCodProRoots[rootId] : null;
+    if (!container && button && button.closest) container = button.closest("[data-fast-cod-pro-root]");
     if (container && typeof container.__fastCodProSubmit === "function") {
       container.__fastCodProSubmit(event || window.event || { preventDefault: function () {}, stopPropagation: function () {} });
     }
     return false;
   };
+
+  window.FastCodProOpen = function (button, event) {
+    var rootId = button && button.dataset ? button.dataset.fastCodRootId : "";
+    var container = rootId && window.FastCodProRoots ? window.FastCodProRoots[rootId] : null;
+    if (!container && button && button.closest) container = button.closest("[data-fast-cod-pro-root]");
+    if (container && typeof container.__fastCodProOpen === "function") {
+      container.__fastCodProOpen(event || window.event || { preventDefault: function () {}, stopPropagation: function () {} });
+    }
+    return false;
+  };
+
+  document.addEventListener("click", function (event) {
+    var launcher = event.target && event.target.closest ? event.target.closest(".fast-cod-pro-launcher") : null;
+    if (!launcher) return;
+    window.FastCodProOpen(launcher, event);
+  }, true);
+
+  document.addEventListener("touchend", function (event) {
+    var launcher = event.target && event.target.closest ? event.target.closest(".fast-cod-pro-launcher") : null;
+    if (!launcher) return;
+    window.FastCodProOpen(launcher, event);
+  }, { capture: true, passive: false });
 
   document.addEventListener("click", function (event) {
     var button = event.target && event.target.closest ? event.target.closest(".fast-cod-pro-button") : null;
