@@ -41,4 +41,4 @@
 ## Current known blocker
 
 - Rotate the exposed Shopify app secret before public App Store submission.
-- Run one final storefront test after the latest deploy and confirm the product page button opens Shopify Checkout.
+- Run one final storefront test after the latest deploy and confirm the product page button opens the COD popup, creates a Shopify order, and opens Shopify's native order status page.

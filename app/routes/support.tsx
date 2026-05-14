@@ -19,7 +19,7 @@ export default function SupportRoute() {
         <p className="legalEyebrow">Fast COD Pro</p>
         <h1 className="legalTitle">Support</h1>
         <p className="legalLead">
-          Need help with onboarding, storefront setup, Shopify Checkout, billing, or exports?
+          Need help with onboarding, storefront setup, COD orders, billing, or exports?
           Use the support options below and include your store URL so we can help quickly.
         </p>
 
@@ -62,7 +62,7 @@ export default function SupportRoute() {
           <h2>What to include</h2>
           <ul className="legalList">
             <li>Your store myshopify.com URL.</li>
-            <li>The product page URL where the checkout button is installed.</li>
+            <li>The product page URL where the COD button is installed.</li>
             <li>A screenshot or short screen recording of the issue.</li>
             <li>Order number or customer phone number if the issue is about an order.</li>
           </ul>
@@ -73,7 +73,7 @@ export default function SupportRoute() {
           <ul className="legalList">
             <li>Install the app and keep the app embedded in the store admin.</li>
             <li>Enable the Fast COD Pro theme block on the product template.</li>
-            <li>Run one test from a product page and confirm Shopify Checkout opens.</li>
+            <li>Run one test from a product page and confirm the Shopify order status page opens.</li>
             <li>Confirm the order appears in the store admin Orders page.</li>
           </ul>
         </section>

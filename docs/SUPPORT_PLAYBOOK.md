@@ -14,12 +14,13 @@
 - Is the correct product selected in the theme block settings?
 - Did the merchant hard refresh the storefront?
 - Are native buy buttons still visible because of theme-specific selectors?
-- Does the Fast COD Pro button redirect to Shopify Checkout?
+- Does the Fast COD Pro button open the COD popup?
+- Does the popup create a Shopify order and redirect to the native order status page?
 
 ## Escalation notes
 
-- If the button does not open Shopify Checkout, inspect theme JS conflicts and selector timing.
-- If checkout does not show COD/manual payment, verify the merchant enabled the payment method in Shopify settings.
+- If the button does not open the popup, inspect theme JS conflicts and selector timing.
+- If the order does not show COD pending payment, inspect the app proxy submit response and Shopify order create payload.
 - If styling is broken, test both theme editor preview and actual storefront page.
 - If authentication fails after secret rotation, uninstall and reinstall the app in the affected store.
 - If privacy compliance webhook delivery fails, confirm the app version was released with the `compliance_topics` subscription and inspect Dev Dashboard webhook logs.

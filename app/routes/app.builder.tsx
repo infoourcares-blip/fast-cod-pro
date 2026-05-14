@@ -100,7 +100,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const collectAddress = formData.get("collectAddress") === "on";
 
     if (!formTitle || !submitButtonLabel || !formButtonLabel || !successMessage) {
-      return { status: "error" as const, message: "Checkout title, button labels, and note are required." };
+      return { status: "error" as const, message: "Popup title, button labels, and note are required." };
     }
 
     await prisma.funnelProfile.update({
@@ -124,14 +124,54 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       },
     });
 
-    return { status: "success" as const, message: "Checkout button saved." };
+    return { status: "success" as const, message: "COD form settings saved." };
   }
 
   if (intent === "create-field") {
-    return {
-      status: "error" as const,
-      message: "Custom pre-checkout fields are disabled. Shopify Checkout collects customer details."
-    };
+    const label = String(formData.get("label") || "").trim();
+    const fieldType = String(formData.get("fieldType") || "text").trim();
+    const placeholder = String(formData.get("placeholder") || "").trim();
+    const required = formData.get("required") === "on";
+
+    if (!label) {
+      return { status: "error" as const, message: "Field name is required." };
+    }
+
+    if (!fieldTypeOptions.some((option) => option.value === fieldType)) {
+      return { status: "error" as const, message: "Choose a valid answer type." };
+    }
+
+    const baseKey = toFieldKey(label);
+    const existingKeys = new Set(
+      profile.formFields.map((field) => field.fieldKey.toLowerCase())
+    );
+    let fieldKey = baseKey;
+    let suffix = 2;
+
+    while (existingKeys.has(fieldKey.toLowerCase())) {
+      fieldKey = `${baseKey}${suffix}`;
+      suffix += 1;
+    }
+
+    const maxSortOrder = profile.formFields.reduce(
+      (max, field) => Math.max(max, field.sortOrder),
+      0
+    );
+
+    await prisma.codFormField.create({
+      data: {
+        funnelProfileId: profile.id,
+        label,
+        fieldKey,
+        fieldType,
+        placeholder: placeholder || null,
+        required,
+        sortOrder: maxSortOrder + 1,
+        active: true
+      }
+    });
+
+    return { status: "success" as const, message: "Field added to COD form." };
   }
 
   if (intent === "reorder-fields") {
@@ -175,11 +215,25 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   if (intent === "toggle-field") {
     const current = formData.get("current") === "true";
+    const field = await prisma.codFormField.findFirst({
+      where: { id, funnelProfileId: profile.id },
+      select: { id: true }
+    });
+
+    if (!field) return { status: "error" as const, message: "Field not found." };
+
     await prisma.codFormField.update({ where: { id }, data: { active: !current } });
     return { status: "success" as const, message: "Field updated." };
   }
 
   if (intent === "delete-field") {
+    const field = await prisma.codFormField.findFirst({
+      where: { id, funnelProfileId: profile.id },
+      select: { id: true }
+    });
+
+    if (!field) return { status: "error" as const, message: "Field not found." };
+
     await prisma.codFormField.delete({ where: { id } });
     return { status: "success" as const, message: "Field deleted." };
   }
@@ -280,13 +334,13 @@ export default function BuilderRoute() {
   };
 
   return (
-    <s-page heading="Checkout Button">
+    <s-page heading="COD Form">
       <div className="simpleShell">
         <section className="simpleHero">
           <div>
             <span className="simpleKicker">Step 1</span>
-            <h1>Customize your Shopify Checkout button</h1>
-            <p>Keep orders inside Shopify Checkout. Customers enter address, phone, and COD payment details in Shopify-hosted fields.</p>
+            <h1>Customize your COD popup</h1>
+            <p>Customers enter delivery details in your popup, then Fast COD Pro creates a Shopify order and opens the native order status page.</p>
           </div>
           <a className="simplePrimary" href={themeEditorUrl} target="_top" rel="noreferrer">Enable on theme</a>
         </section>
@@ -308,7 +362,7 @@ export default function BuilderRoute() {
             </div>
 
             <label className="simpleField">
-              <span>Checkout title</span>
+              <span>Popup title</span>
               <input
                 name="formTitle"
                 value={formSettings.formTitle}
@@ -335,7 +389,7 @@ export default function BuilderRoute() {
             </label>
 
             <label className="simpleField">
-              <span>Checkout button label</span>
+              <span>Popup submit button label</span>
               <input
                 name="formButtonLabel"
                 value={formSettings.formButtonLabel}
@@ -344,7 +398,7 @@ export default function BuilderRoute() {
             </label>
 
             <label className="simpleField">
-              <span>Checkout note</span>
+              <span>Success note</span>
               <input
                 name="successMessage"
                 value={formSettings.successMessage}
@@ -354,7 +408,7 @@ export default function BuilderRoute() {
 
             <div className="simpleTwo">
               <label className="simpleField">
-                <span>Checkout button color</span>
+                <span>Popup button color</span>
                 <input
                   type="color"
                   name="buttonBgColor"
@@ -363,7 +417,7 @@ export default function BuilderRoute() {
                 />
               </label>
               <label className="simpleField">
-                <span>Checkout button text</span>
+                <span>Popup button text</span>
                 <input
                   type="color"
                   name="buttonTextColor"
@@ -454,14 +508,14 @@ export default function BuilderRoute() {
                 checked={formSettings.collectAddress}
                 onChange={(event) => updateSetting("collectAddress", event.currentTarget.checked)}
               />
-              <span>Use Shopify Checkout address fields</span>
+              <span>Ask customer for delivery address</span>
             </label>
           </Form>
 
           <section className="simpleCard">
             <div className="simpleCardHeader">
               <h2>Live preview</h2>
-              <span className="simplePill">Shopify Checkout</span>
+              <span className="simplePill">COD popup</span>
             </div>
             <div className="simplePreview" style={{
               ["--simple-button-bg" as string]: formSettings.buttonBgColor,
@@ -480,7 +534,7 @@ export default function BuilderRoute() {
                 <span className="simplePreviewHome">⌂</span>
                 <div>
                   <strong>FAST COD PRO</strong>
-                  <span>Secure Shopify Checkout</span>
+                  <span>Shopify order status redirect</span>
                 </div>
                 <span className="simplePreviewClose">×</span>
               </div>
@@ -516,30 +570,30 @@ export default function BuilderRoute() {
                   </div>
                 </div>
 
-                <h3>Shopify Checkout</h3>
+                <h3>{formSettings.formTitle}</h3>
                 <div className="simplePreviewField">
                   <span>Customer details</span>
                   <div className="simplePreviewInput">
                     <b>✓</b>
-                    <small>Collected by Shopify Checkout</small>
+                    <small>Collected in the COD popup</small>
                   </div>
                 </div>
                 <div className="simplePreviewField">
                   <span>Shipping address</span>
                   <div className="simplePreviewInput">
                     <b>✓</b>
-                    <small>Entered in Shopify-hosted fields</small>
+                    <small>Saved on the Shopify order</small>
                   </div>
                 </div>
                 <div className="simplePreviewField">
                   <span>Payment method</span>
                   <div className="simplePreviewInput">
                     <b>✓</b>
-                    <small>COD selected in Shopify Checkout</small>
+                    <small>Cash on Delivery pending</small>
                   </div>
                 </div>
                 <button type="button">
-                  Continue to Shopify Checkout
+                  {formSettings.formButtonLabel} - {previewAmount}
                 </button>
               </div>
             </div>
@@ -549,8 +603,8 @@ export default function BuilderRoute() {
         <section className="simpleCard">
           <div className="simpleCardHeader">
             <div>
-              <h2>Checkout fields</h2>
-              <p>Disabled for App Store compliance. Customer name, phone, address, and payment must be collected in Shopify Checkout.</p>
+              <h2>COD popup fields</h2>
+              <p>Add, hide, delete, or drag fields into the order you want customers to fill before the Shopify order is created.</p>
             </div>
           </div>
 
@@ -596,8 +650,8 @@ export default function BuilderRoute() {
               />
               <span>Required field</span>
             </label>
-            <button type="submit" className="simplePrimary" disabled>
-              {isAddingField ? "Adding..." : "Disabled"}
+            <button type="submit" className="simplePrimary" disabled={isAddingField}>
+              {isAddingField ? "Adding..." : "Add field"}
             </button>
             <div className="simpleFieldHelper">
               <span>Quick fill:</span>
@@ -615,7 +669,7 @@ export default function BuilderRoute() {
           </Form>
 
           <div className="simpleFieldListHeader">
-            <strong>Legacy field list</strong>
+            <strong>Current form fields</strong>
             <span>{orderedFields.length} total · {activeFields.length} visible</span>
           </div>
 

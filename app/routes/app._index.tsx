@@ -157,9 +157,9 @@ export default function DashboardRoute() {
           <div className="proHeroCopy">
             <span className="proEyebrow">COD conversion workspace</span>
             <h1>Boost Your Conversion</h1>
-            <p>Send shoppers from the product page into secure Shopify Checkout for COD payment.</p>
+            <p>Open a fast COD popup, create the Shopify order, and send shoppers to Shopify&apos;s native order status page.</p>
             <div className="proHeroActions">
-              <Link className="proButton" to="/app/builder">Customize checkout button</Link>
+              <Link className="proButton" to="/app/builder">Customize COD form</Link>
               {themeEditorUrl ? (
                 <a className="proButton proButtonSecondary" href={themeEditorUrl} target="_top" rel="noreferrer">
                   Open Theme Editor
@@ -168,14 +168,15 @@ export default function DashboardRoute() {
             </div>
             <div className="proBadgeGrid">
               {[
-                "Product page checkout button",
-                "Uses Shopify Checkout",
-                "No offsite checkout",
-                "Customer details collected by Shopify",
+                "Product page COD button",
+                "Popup COD order form",
+                "Shopify order creation",
+                "Native Shopify order status page",
+                "Customer address saved on order",
                 "Theme app block",
                 "Button color controls",
-                "COD through Shopify payment settings",
-                "App Store review compliant",
+                "Cash on Delivery pending payment",
+                "Order notes and custom fields",
               ].map((badge) => (
                 <span className="proFeatureBadge" key={badge}>{badge}</span>
               ))}
@@ -186,10 +187,10 @@ export default function DashboardRoute() {
               <div className="proPhoneTop" />
               <div className="proPhoneCard">
                 <strong>Fast COD Pro</strong>
-                <span>Product added to cart</span>
-                <span>Secure Shopify Checkout</span>
-                <span>COD payment method</span>
-                <button type="button">Continue to Checkout</button>
+                <span>Quick COD popup</span>
+                <span>Shopify order created</span>
+                <span>Native order status page</span>
+                <button type="button">Place COD Order</button>
               </div>
             </div>
           </div>
@@ -201,7 +202,7 @@ export default function DashboardRoute() {
               <div>
                 <span className="proEyebrow">Action needed</span>
                 <h2>Legacy submission warning</h2>
-                <p>This warning came from the old order creation flow. The storefront now uses Shopify Checkout.</p>
+                <p>The latest COD order test returned a Shopify warning. Review it before resubmitting.</p>
               </div>
             </div>
             <div className="proCodeLine">{draftOrderWarning}</div>
@@ -222,7 +223,7 @@ export default function DashboardRoute() {
           <article className="proStatCard">
             <span>Button settings</span>
             <strong>{summary.stats.activeFormFields}</strong>
-            <small>Checkout button configured</small>
+            <small>COD form configured</small>
           </article>
           <article className="proStatCard">
             <span>Products found</span>
@@ -242,14 +243,14 @@ export default function DashboardRoute() {
             </div>
             <div className="proProgress"><span style={{ width: `${(setupCompleted / 4) * 100}%` }} /></div>
             <div className="proChecklist">
-              <Link className="proCheckItem proCheckDone" to="/app/builder">Customize checkout button</Link>
-              <Link className="proCheckItem proCheckDone" to="/app/builder">Use Shopify-hosted checkout fields</Link>
+              <Link className="proCheckItem proCheckDone" to="/app/builder">Customize COD popup fields</Link>
+              <Link className="proCheckItem proCheckDone" to="/app/builder">Create Shopify COD order</Link>
               {themeEditorUrl ? (
                 <a className="proCheckItem" href={themeEditorUrl} target="_top" rel="noreferrer">Enable theme app block</a>
               ) : (
                 <span className="proCheckItem">Enable theme app block</span>
               )}
-              <a className="proCheckItem" href="/checkout" target="_top" rel="noreferrer">Test Shopify Checkout flow</a>
+              <Link className="proCheckItem" to="/app/submissions">Review captured COD orders</Link>
             </div>
           </section>
 
@@ -257,30 +258,30 @@ export default function DashboardRoute() {
             <div className="proCardHeader">
               <div>
                 <h2>Storefront status</h2>
-                <p>Theme embed, app proxy, and Shopify Checkout readiness.</p>
+                <p>Theme embed, app proxy, and Shopify order creation readiness.</p>
               </div>
             </div>
             <div className="proHealthList">
               <div><span className="proDot" />Theme App Embed <strong>Ready</strong></div>
-              <div><span className="proDot" />Shopify Checkout <strong>Required</strong></div>
+              <div><span className="proDot" />Shopify Orders API <strong>Connected</strong></div>
               <div><span className="proDot" />App proxy config <strong>Active</strong></div>
-              <div><span className="proDot" />Order creation API <strong>Disabled</strong></div>
+              <div><span className="proDot" />Order status redirect <strong>Active</strong></div>
             </div>
           </section>
         </div>
 
         <div className="proGridThree">
           <Link className="proActionCard" to="/app/builder">
-            <strong>Checkout button</strong>
+            <strong>COD form</strong>
             <span>Edit button label, colors, icon, animation, and theme placement.</span>
           </Link>
           <Link className="proActionCard" to="/app/submissions">
             <strong>Orders Queue</strong>
-            <span>Review legacy captured requests before the Shopify Checkout update.</span>
+            <span>Review captured COD requests and Shopify order results.</span>
           </Link>
           <Link className="proActionCard" to="/app/billing">
             <strong>Billing Plans</strong>
-            <span>Manage the app plan for storefront checkout button features.</span>
+            <span>Manage the app plan for storefront COD form features.</span>
           </Link>
         </div>
 
@@ -289,7 +290,7 @@ export default function DashboardRoute() {
             <div className="proCardHeader">
               <div>
                 <h2>Recent Shopify products</h2>
-                <p>These are the latest products available for the storefront checkout button.</p>
+                <p>These are the latest products available for the storefront COD button.</p>
               </div>
             </div>
             <div className="proTable">
@@ -322,7 +323,7 @@ export default function DashboardRoute() {
               <div>
                 <h2>Support</h2>
                 <p>
-                  Need help with setup, Shopify Checkout, or billing? Email us at{" "}
+                  Need help with setup, COD orders, or billing? Email us at{" "}
                   <a className="proInlineLink" href={supportMailHref}>
                     {supportEmail}
                   </a>
@@ -347,19 +348,19 @@ export default function DashboardRoute() {
           <div className="proCardHeader">
             <div>
               <h2>Live app status</h2>
-              <p>Only Shopify Checkout compliant modules are listed here.</p>
+              <p>Only active production modules are listed here.</p>
             </div>
           </div>
           <div className="proGridThree">
             <article className="proMiniCard">
               <strong>{summary.stats.formFields}</strong>
-              <span>Checkout button</span>
+              <span>COD form fields</span>
               <small>Theme app block</small>
             </article>
             <article className="proMiniCard">
               <strong>{monthlyOrders}</strong>
-              <span>Legacy records</span>
-              <small>No app-created orders</small>
+              <span>Orders this month</span>
+              <small>Shopify COD orders</small>
             </article>
             <article className="proMiniCard">
               <strong>{recentProducts.length}</strong>

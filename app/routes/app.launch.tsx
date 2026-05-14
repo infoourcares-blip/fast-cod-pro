@@ -35,9 +35,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       detail: "Sessions and Fast COD Pro merchant data are purged when the app is removed.",
     },
     {
-      title: "Shopify Checkout flow tested",
+      title: "COD order flow tested",
       status: "pending",
-      detail: "Run one product page test and confirm the button sends the customer to Shopify Checkout.",
+      detail: "Run one product page test and confirm the popup creates a Shopify COD order and opens the native order status page.",
     },
     {
       title: "App listing assets prepared",
@@ -45,9 +45,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       detail: "Prepare final App Store screenshots, app icon, demo video, and listing copy before submitting.",
     },
     {
-      title: "Checkout bypass removed",
+      title: "Native Shopify order page verified",
       status: "done",
-      detail: "The storefront no longer collects customer address details or creates orders through the app proxy.",
+      detail: "The storefront redirects customers to Shopify's native order status page after the COD order is created.",
     },
     {
       title: "Production billing validation",
@@ -97,8 +97,8 @@ export default function LaunchRoute() {
                 <p className="eyebrow">Critical blocker</p>
                 <h3 className="panelTitle">Latest order test needs attention</h3>
                 <p className="panelText">
-                  This warning is from the old order creation flow. The storefront now redirects
-                  customers to Shopify Checkout instead.
+                  The latest COD order test returned a Shopify warning. Resolve it before submitting
+                  a new App Store review build.
                 </p>
               </div>
             </div>

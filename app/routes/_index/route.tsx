@@ -39,12 +39,12 @@ export default function App() {
         )}
         <ul className={styles.list}>
           <li>
-            <strong>Shopify Checkout button</strong>. Send shoppers from the product
-            page into secure Shopify Checkout.
+            <strong>COD popup button</strong>. Let shoppers place a COD request
+            directly from the product page.
           </li>
           <li>
-            <strong>Checkout compliant</strong>. Customer details and COD payment
-            selection stay inside Shopify-hosted checkout fields.
+            <strong>Shopify order records</strong>. COD orders are created in
+            Shopify with pending payment and native order status pages.
           </li>
           <li>
             <strong>Theme controls</strong>. Customize the button label, colors,
