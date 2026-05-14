@@ -419,9 +419,58 @@
       return body;
     }
 
-    function openModal() {
+    function syncPortalDesign(portal) {
+      [
+        "--fast-cod-accent",
+        "--fast-cod-launcher-bg",
+        "--fast-cod-launcher-text",
+        "--fast-cod-header-bg",
+        "--fast-cod-header-text",
+        "--fast-cod-modal-bg",
+        "--fast-cod-surface-bg",
+        "--fast-cod-text",
+        "--fast-cod-muted",
+        "--fast-cod-input-bg",
+        "--fast-cod-input-text",
+        "--fast-cod-input-border",
+        "--fast-cod-summary-bg",
+        "--fast-cod-primary-bg",
+        "--fast-cod-primary-text",
+        "--fast-cod-radius"
+      ].forEach(function (name) {
+        var value = container.style.getPropertyValue(name);
+        if (value) portal.style.setProperty(name, value);
+      });
+    }
+
+    function ensureModalPortal() {
+      if (!modal || modal.__fastCodPortalReady === true) {
+        if (modal && modal.parentElement) syncPortalDesign(modal.parentElement);
+        return;
+      }
+
+      var portal = document.createElement("div");
+      portal.setAttribute("data-fast-cod-pro-root", "");
+      portal.className = "fast-cod-pro-portal-root";
+      portal.__fastCodProSubmit = submitCodOrder;
+      syncPortalDesign(portal);
+      document.body.appendChild(portal);
+      portal.appendChild(modal);
+      modal.__fastCodPortalReady = true;
+    }
+
+    function openModal(event) {
+      if (event && typeof event.preventDefault === "function") event.preventDefault();
+      if (event && typeof event.stopPropagation === "function") event.stopPropagation();
+      ensureModalPortal();
       modal.hidden = false;
       document.body.classList.add("fast-cod-pro-modal-open");
+      var firstField = form.querySelector("input:not([type='hidden']), textarea, select");
+      if (firstField && typeof firstField.focus === "function") {
+        setTimeout(function () {
+          firstField.focus();
+        }, 0);
+      }
     }
 
     function closeModal() {
@@ -430,6 +479,7 @@
     }
 
     launcher.addEventListener("click", openModal);
+    launcher.addEventListener("touchend", openModal, { passive: false });
     closeButtons.forEach(function (button) {
       button.addEventListener("click", closeModal);
     });
