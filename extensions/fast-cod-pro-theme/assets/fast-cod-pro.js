@@ -194,11 +194,15 @@
   }
 
   function syncQuantity(container, currency, numericPrice, displayPrice) {
-    var quantityInput = container.querySelector('input[name="quantity"]');
-    var quantityDisplay = container.querySelector('input[name="quantityDisplay"]');
-    var subtotal = container.querySelector(".fast-cod-pro-subtotal");
-    var total = container.querySelector(".fast-cod-pro-total");
-    var submitButton = container.querySelector(".fast-cod-pro-button");
+    var rootId = container.dataset.fastCodRootId || "";
+    var portal = rootId ? document.querySelector('.fast-cod-pro-portal-root[data-fast-cod-root-id="' + rootId + '"]') : null;
+    var scope = (portal && portal.querySelector(".fast-cod-pro-modal")) || container.querySelector(".fast-cod-pro-modal") || container;
+    var quantityInput = scope.querySelector('input[name="quantity"]');
+    var quantityDisplay = scope.querySelector('input[name="quantityDisplay"]');
+    var subtotal = scope.querySelector(".fast-cod-pro-subtotal");
+    var total = scope.querySelector(".fast-cod-pro-total");
+    var submitButton = scope.querySelector(".fast-cod-pro-button");
+    if (!quantityInput || !quantityDisplay || !subtotal || !total || !submitButton) return;
     var quantity = Math.max(1, Number(quantityInput.value || 1));
     var amount = numericPrice ? currency + " " + (numericPrice * quantity).toFixed(2) : displayPrice;
 
@@ -496,7 +500,8 @@
 
     qtyButtons.forEach(function (button) {
       button.addEventListener("click", function () {
-        var quantityInput = container.querySelector('input[name="quantity"]');
+        var quantityInput = form.querySelector('input[name="quantity"]');
+        if (!quantityInput) return;
         var delta = Number(button.getAttribute("data-qty-change") || "0");
         quantityInput.value = String(Math.max(1, Number(quantityInput.value || "1") + delta));
         syncQuantity(container, currency, numericPrice, displayPrice);
@@ -507,7 +512,7 @@
       if (event && typeof event.preventDefault === "function") event.preventDefault();
       if (event && typeof event.stopPropagation === "function") event.stopPropagation();
       if (submitInProgress) return;
-      var submitButton = container.querySelector(".fast-cod-pro-button");
+      var submitButton = form.querySelector(".fast-cod-pro-button") || modal.querySelector(".fast-cod-pro-button");
       if (!submitButton) return;
       submitInProgress = true;
       status.hidden = false;
@@ -574,7 +579,7 @@
     container.__fastCodProSubmit = submitCodOrder;
 
     function bindSubmitButton() {
-      var submitButton = container.querySelector(".fast-cod-pro-button");
+      var submitButton = form.querySelector(".fast-cod-pro-button") || modal.querySelector(".fast-cod-pro-button");
       if (!submitButton) return;
       submitButton.setAttribute("type", "button");
       submitButton.setAttribute("onclick", "return window.FastCodProSubmit?window.FastCodProSubmit(this,event):false");
