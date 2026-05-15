@@ -107,6 +107,12 @@
     }
   }
 
+  function getModalScope(container) {
+    var rootId = container.dataset.fastCodRootId || "";
+    var portal = rootId ? document.querySelector('.fast-cod-pro-portal-root[data-fast-cod-root-id="' + rootId + '"]') : null;
+    return (portal && portal.querySelector(".fast-cod-pro-modal")) || container.querySelector(".fast-cod-pro-modal") || container;
+  }
+
   function ensureHideStyle() {
     if (document.getElementById("fast-cod-pro-hide-style")) return;
     var style = document.createElement("style");
@@ -194,9 +200,7 @@
   }
 
   function syncQuantity(container, currency, numericPrice, displayPrice) {
-    var rootId = container.dataset.fastCodRootId || "";
-    var portal = rootId ? document.querySelector('.fast-cod-pro-portal-root[data-fast-cod-root-id="' + rootId + '"]') : null;
-    var scope = (portal && portal.querySelector(".fast-cod-pro-modal")) || container.querySelector(".fast-cod-pro-modal") || container;
+    var scope = getModalScope(container);
     var quantityInput = scope.querySelector('input[name="quantity"]');
     var quantityDisplay = scope.querySelector('input[name="quantityDisplay"]');
     var subtotal = scope.querySelector(".fast-cod-pro-subtotal");
@@ -247,12 +251,13 @@
     container.dataset.priceDisplay = displayPrice;
     if (candidates.length) container.dataset.variantCandidates = candidates.join(",");
 
-    var titleNode = container.querySelector(".fast-cod-pro-summary-title");
-    var priceNode = container.querySelector(".fast-cod-pro-summary-price");
-    var imageNode = container.querySelector(".fast-cod-pro-summary-image");
-    var variantInput = container.querySelector('input[name="variantId"]');
-    var productInput = container.querySelector('input[name="productTitle"]');
-    var priceInput = container.querySelector('input[name="price"]');
+    var scope = getModalScope(container);
+    var titleNode = scope.querySelector(".fast-cod-pro-summary-title");
+    var priceNode = scope.querySelector(".fast-cod-pro-summary-price");
+    var imageNode = scope.querySelector(".fast-cod-pro-summary-image");
+    var variantInput = scope.querySelector('input[name="variantId"]');
+    var productInput = scope.querySelector('input[name="productTitle"]');
+    var priceInput = scope.querySelector('input[name="price"]');
 
     if (titleNode) titleNode.textContent = title;
     if (priceNode) priceNode.textContent = displayPrice;
@@ -316,20 +321,23 @@
       var payload = await response.json();
       var fields = payload.fields && payload.fields.length ? payload.fields : defaultFields();
       var formConfig = payload.form || {};
-      var title = container.querySelector(".fast-cod-pro-form-title");
-      var subtitle = container.querySelector(".fast-cod-pro-sheet-title-copy span");
-      var form = container.querySelector(".fast-cod-pro-grid");
+      var scope = getModalScope(container);
+      var title = scope.querySelector(".fast-cod-pro-form-title");
+      var subtitle = scope.querySelector(".fast-cod-pro-sheet-title-copy span");
+      var form = scope.querySelector(".fast-cod-pro-grid");
       var launcher = container.querySelector(".fast-cod-pro-launcher");
       var launcherIcon = container.querySelector(".fast-cod-pro-launcher-icon");
       var launcherLabel = container.querySelector(".fast-cod-pro-launcher-label");
-      var status = container.querySelector(".fast-cod-pro-status");
+      var status = scope.querySelector(".fast-cod-pro-status");
       var fieldHtml = fields.map(fieldMarkup).join("");
+      if (!form) return;
       var existingQuantity = form.querySelector('input[name="quantity"]');
       var existingVariant = form.querySelector('input[name="variantId"]');
       var existingProduct = form.querySelector('input[name="productTitle"]');
       var existingPrice = form.querySelector('input[name="price"]');
       var existingShop = form.querySelector('input[name="shop"]');
       var existingButton = form.querySelector(".fast-cod-pro-button");
+      if (!existingQuantity || !existingVariant || !existingProduct || !existingPrice || !existingButton) return;
 
       form.innerHTML =
         '<h3 class="fast-cod-pro-form-title">' + escapeHtml(formConfig.title || "Fast COD Pro order form") + "</h3>" +
