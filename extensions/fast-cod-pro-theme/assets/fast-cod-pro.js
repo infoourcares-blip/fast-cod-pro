@@ -508,8 +508,8 @@
       var redirectUrl = getOrderRedirectUrl(result || {});
       if (!redirectUrl) return false;
 
-      status.textContent = "Order created. Opening Shopify thank-you page...";
-      status.style.color = "#047857";
+      status.hidden = true;
+      status.textContent = "";
       window.location.assign(redirectUrl);
 
       setTimeout(function () {
@@ -582,9 +582,8 @@
       var submitButton = form.querySelector(".fast-cod-pro-button") || modal.querySelector(".fast-cod-pro-button");
       if (!submitButton) return;
       submitInProgress = true;
-      status.hidden = false;
-      status.textContent = "Placing order securely...";
-      status.style.color = "#0f172a";
+      status.hidden = true;
+      status.textContent = "";
       submitButton.disabled = true;
 
       var body = collectFormData();
@@ -626,8 +625,8 @@
           return;
         }
 
-        status.textContent = result.message || (result.orderName ? "Order " + result.orderName + " created." : "COD order submitted.");
-        status.style.color = "#047857";
+        status.hidden = true;
+        status.textContent = "";
         form.innerHTML =
           '<div class="fast-cod-pro-thank-you">' +
           '<strong>Thank you!</strong>' +
