@@ -32,6 +32,14 @@ type SubmissionContext = {
   tokenIssue?: string;
 };
 
+type OrderTrackingDetails = {
+  fullUrl?: string;
+  shopifyCartToken?: string;
+  country?: string;
+  timestamp?: string;
+  ipAddress?: string;
+};
+
 const SUBMIT_BUILD_ID = "cod-submit-2026-05-13-fast-submit-1";
 const FREE_ORDER_LIMIT = 100;
 const OFFLINE_TOKEN_REFRESH_WINDOW_MS = 5 * 60 * 1000;
@@ -118,6 +126,68 @@ async function hasActiveUnlimitedPlan(admin: AdminClient) {
 function normalizeShopDomain(value: FormDataEntryValue | string | null) {
   const shop = String(value || "").trim().toLowerCase();
   return /^[a-z0-9][a-z0-9-]*\.myshopify\.com$/.test(shop) ? shop : "";
+}
+
+function firstHeaderValue(value: string | null) {
+  return String(value || "")
+    .split(",")[0]
+    .trim();
+}
+
+function getRequestIpAddress(request: Request) {
+  return (
+    firstHeaderValue(request.headers.get("cf-connecting-ip")) ||
+    firstHeaderValue(request.headers.get("x-real-ip")) ||
+    firstHeaderValue(request.headers.get("x-forwarded-for")) ||
+    firstHeaderValue(request.headers.get("fly-client-ip")) ||
+    ""
+  );
+}
+
+function buildAdditionalDetails({
+  customerName,
+  phone,
+  addressText,
+  cleanCity,
+  postalCode,
+  quantity,
+  tracking
+}: {
+  customerName: string;
+  phone: string;
+  addressText: string;
+  cleanCity: string;
+  postalCode: string;
+  quantity: number;
+  tracking?: OrderTrackingDetails;
+}) {
+  return [
+    { key: "Quantity", value: String(Math.max(1, quantity || 1)) },
+    { key: "Full Name", value: customerName },
+    { key: "Mobile Number", value: phone },
+    { key: "Complete Full Address", value: addressText },
+    { key: "Pincode", value: postalCode },
+    { key: "State", value: inferIndianProvince(postalCode, cleanCity).name || "" },
+    { key: "City", value: cleanCity },
+    { key: "country", value: tracking?.country || "IN" },
+    { key: "shopify-cart-token", value: tracking?.shopifyCartToken || "" },
+    { key: "full_url", value: tracking?.fullUrl || "" },
+    { key: "_", value: tracking?.timestamp || "" },
+    { key: "IP Address", value: tracking?.ipAddress || "" },
+    { key: "payment_method", value: "Cash on Delivery" },
+    { key: "source", value: "fast_cod_pro_theme_form" },
+    { key: "customer_name", value: customerName },
+    { key: "customer_phone", value: phone },
+    { key: "delivery_address", value: addressText },
+    { key: "city", value: cleanCity },
+    { key: "pincode", value: postalCode }
+  ]
+    .map((item) => ({ key: item.key, value: String(item.value || "").trim() }))
+    .filter((item) => item.value);
+}
+
+function asRestNoteAttributes(attributes: Array<{ key: string; value: string }>) {
+  return attributes.map((item) => ({ name: item.key, value: item.value }));
 }
 
 function wantsJson(request: Request) {
@@ -705,7 +775,8 @@ async function createOrderDirectly({
   variantId,
   quantity,
   price,
-  currencyCode
+  currencyCode,
+  tracking
 }: {
   admin: AdminClient;
   shop: string;
@@ -721,6 +792,7 @@ async function createOrderDirectly({
   quantity: number;
   price: number;
   currencyCode: string;
+  tracking?: OrderTrackingDetails;
 }) {
   const { firstName, lastName } = splitCustomerName(customerName);
   const postalCode = inferPostalCode(pincode, address1);
@@ -742,13 +814,24 @@ async function createOrderDirectly({
       notes,
       rawVariantId,
       quantity,
-      price
+      price,
+      tracking
     });
 
     if (restOrderResult.order?.id) {
       return restOrderResult;
     }
   }
+
+  const additionalDetails = buildAdditionalDetails({
+    customerName,
+    phone,
+    addressText,
+    cleanCity,
+    postalCode,
+    quantity,
+    tracking
+  });
 
   const response = await admin.graphql(
     `#graphql
@@ -822,15 +905,7 @@ async function createOrderDirectly({
             provinceCode: province.code || undefined,
             countryCode: "IN"
           },
-          customAttributes: [
-            { key: "customer_name", value: customerName },
-            { key: "payment_method", value: "Cash on Delivery" },
-            { key: "customer_phone", value: phone },
-            { key: "delivery_address", value: addressText },
-            { key: "city", value: cleanCity },
-            { key: "pincode", value: postalCode },
-            { key: "source", value: "fast_cod_pro_theme_form" }
-          ].filter((item) => item.value)
+          customAttributes: additionalDetails
         }
       }
     }
@@ -894,7 +969,8 @@ async function createRestOrderDirectly({
   notes,
   rawVariantId,
   quantity,
-  price
+  price,
+  tracking
 }: {
   shop: string;
   accessToken: string;
@@ -907,6 +983,7 @@ async function createRestOrderDirectly({
   rawVariantId: string;
   quantity: number;
   price: number;
+  tracking?: OrderTrackingDetails;
 }) {
   const variantNumericId = numericVariantId(rawVariantId);
   if (!variantNumericId) {
@@ -920,6 +997,15 @@ async function createRestOrderDirectly({
   const province = inferIndianProvince(postalCode, cleanCity);
   const addressText = visibleAddress(cleanAddress1, cleanCity, postalCode);
   const totalAmount = moneyAmount(price * Math.max(1, quantity));
+  const additionalDetails = buildAdditionalDetails({
+    customerName,
+    phone,
+    addressText,
+    cleanCity,
+    postalCode,
+    quantity,
+    tracking
+  });
   const address = {
     first_name: firstName,
     last_name: lastName || "-",
@@ -991,15 +1077,7 @@ async function createRestOrderDirectly({
         ],
         shipping_address: address,
         billing_address: address,
-        note_attributes: [
-          { name: "customer_name", value: customerName },
-          { name: "payment_method", value: "Cash on Delivery" },
-          { name: "customer_phone", value: phone },
-          { name: "delivery_address", value: addressText },
-          { name: "city", value: cleanCity },
-          { name: "pincode", value: postalCode },
-          { name: "source", value: "fast_cod_pro_theme_form" }
-        ].filter((item) => item.value)
+        note_attributes: asRestNoteAttributes(additionalDetails)
       }
     });
 
@@ -1249,6 +1327,15 @@ async function handleSubmission(
     const rawVariantId = String(getValue("variantId") || "").trim();
     const price = Number(getValue("price") || 0);
     const quantity = Number(getValue("quantity") || 1);
+    const tracking: OrderTrackingDetails = {
+      fullUrl: String(getValue("fullUrl") || getValue("full_url") || "").trim(),
+      shopifyCartToken: String(
+        getValue("shopifyCartToken") || getValue("shopify-cart-token") || ""
+      ).trim(),
+      country: String(getValue("country") || "IN").trim() || "IN",
+      timestamp: String(getValue("_") || "").trim(),
+      ipAddress: getRequestIpAddress(request)
+    };
     const postalCode = inferPostalCode(pincode, address1);
     const cleanAddress1 = cleanAddressLine(address1, postalCode, city);
     const cleanCity = cleanCityName(city, postalCode);
@@ -1335,7 +1422,8 @@ async function handleSubmission(
           variantId,
           quantity,
           price,
-          currencyCode: profile.defaultCurrency
+          currencyCode: profile.defaultCurrency,
+          tracking
         });
 
         if (directOrderResult.order?.id) {
@@ -1412,14 +1500,16 @@ async function handleSubmission(
                 price: "0.00"
               },
               customAttributes: [
-                { key: "customer_name", value: customerName },
-                { key: "phone", value: phone },
-                { key: "original_phone", value: rawPhone },
-                { key: "delivery_address", value: cleanAddressText },
-                { key: "city", value: cleanCity },
-                { key: "pincode", value: postalCode },
-                { key: "payment_method", value: "Cash on Delivery" },
-                { key: "source", value: "fast_cod_pro_theme_form" }
+                ...buildAdditionalDetails({
+                  customerName,
+                  phone,
+                  addressText: cleanAddressText,
+                  cleanCity,
+                  postalCode,
+                  quantity,
+                  tracking
+                }),
+                { key: "original_phone", value: rawPhone }
               ].filter((item) => item.value)
             }
           }
@@ -1571,7 +1661,8 @@ async function handleSubmission(
                 variantId,
                 quantity,
                 price,
-                currencyCode: profile.defaultCurrency
+                currencyCode: profile.defaultCurrency,
+                tracking
               });
 
               if (directFallbackResult.order?.id) {

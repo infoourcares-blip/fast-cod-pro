@@ -310,6 +310,12 @@
     return "";
   }
 
+  function getCookieValue(name) {
+    var escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    var match = document.cookie.match(new RegExp("(?:^|; )" + escaped + "=([^;]*)"));
+    return match ? decodeURIComponent(match[1]) : "";
+  }
+
   async function enhanceFields(container, endpoint, accentColor) {
     try {
       var configUrl = new URL(endpoint, window.location.origin);
@@ -435,6 +441,12 @@
       }
 
       if (!body.get("shop")) body.append("shop", shopDomain);
+      body.set("fullUrl", window.location.href);
+      body.set("country", "IN");
+      body.set("_", String(Date.now()));
+
+      var cartToken = getCookieValue("cart");
+      if (cartToken) body.set("shopifyCartToken", cartToken);
       return body;
     }
 
