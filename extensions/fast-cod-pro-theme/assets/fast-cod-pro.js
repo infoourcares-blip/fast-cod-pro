@@ -474,6 +474,53 @@
       });
     }
 
+    function normalizeRedirectUrl(value) {
+      var raw = String(value || "").trim();
+      if (!raw) return "";
+
+      try {
+        return new URL(raw, window.location.origin).toString();
+      } catch (_error) {
+        return raw;
+      }
+    }
+
+    function getOrderRedirectUrl(result) {
+      var redirectUrl = normalizeRedirectUrl(result.orderStatusUrl || result.redirectUrl);
+      if (redirectUrl) return redirectUrl;
+
+      if (result.confirmationUrl || result.orderName) {
+        var fallbackUrl = result.confirmationUrl || "/apps/fast-cod-pro/thank-you";
+        var url = new URL(fallbackUrl, window.location.origin);
+        if (result.orderName && !url.searchParams.get("order")) {
+          url.searchParams.set("order", result.orderName);
+        }
+        if (!url.searchParams.get("shop")) {
+          url.searchParams.set("shop", shopDomain);
+        }
+        return url.toString();
+      }
+
+      return "";
+    }
+
+    function redirectToOrder(result) {
+      var redirectUrl = getOrderRedirectUrl(result || {});
+      if (!redirectUrl) return false;
+
+      status.textContent = "Order created. Opening Shopify thank-you page...";
+      status.style.color = "#047857";
+      window.location.assign(redirectUrl);
+
+      setTimeout(function () {
+        if (window.location.href !== redirectUrl) {
+          window.location.href = redirectUrl;
+        }
+      }, 300);
+
+      return true;
+    }
+
     function ensureModalPortal() {
       if (!modal || modal.__fastCodPortalReady === true) {
         if (modal && modal.parentElement) syncPortalDesign(modal.parentElement);
@@ -575,13 +622,12 @@
           return;
         }
 
-        status.textContent = result.message || (result.orderName ? "Order " + result.orderName + " created." : "COD order submitted.");
-        status.style.color = "#047857";
-        if (result.orderStatusUrl || result.confirmationUrl || result.redirectUrl) {
-          window.location.href = result.orderStatusUrl || result.confirmationUrl || result.redirectUrl;
+        if (redirectToOrder(result)) {
           return;
         }
 
+        status.textContent = result.message || (result.orderName ? "Order " + result.orderName + " created." : "COD order submitted.");
+        status.style.color = "#047857";
         form.innerHTML =
           '<div class="fast-cod-pro-thank-you">' +
           '<strong>Thank you!</strong>' +

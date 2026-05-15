@@ -584,29 +584,38 @@ async function getRestOrderStatusUrl(shop: string, accessToken: string, orderId:
   const orderNumericId = numericOrderId(orderId);
   if (!orderNumericId) return "";
 
-  try {
-    const response = await fetch(`https://${shop}/admin/api/2026-04/orders/${orderNumericId}.json`, {
-      headers: {
-        Accept: "application/json",
-        "X-Shopify-Access-Token": accessToken
-      }
-    });
-    const payload = (await response.json()) as {
-      order?: {
-        order_status_url?: string | null;
-        status_url?: string | null;
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    try {
+      const response = await fetch(`https://${shop}/admin/api/2026-04/orders/${orderNumericId}.json`, {
+        headers: {
+          Accept: "application/json",
+          "X-Shopify-Access-Token": accessToken
+        }
+      });
+      const payload = (await response.json()) as {
+        order?: {
+          order_status_url?: string | null;
+          status_url?: string | null;
+        };
       };
-    };
+      const orderStatusUrl = payload.order?.order_status_url || payload.order?.status_url || "";
 
-    return payload.order?.order_status_url || payload.order?.status_url || "";
-  } catch (error) {
-    console.error("Fast COD Pro order status URL lookup failed", {
-      shop,
-      orderId,
-      error: error instanceof Error ? error.message : String(error)
-    });
-    return "";
+      if (orderStatusUrl) return orderStatusUrl;
+    } catch (error) {
+      console.error("Fast COD Pro order status URL lookup failed", {
+        shop,
+        orderId,
+        attempt: attempt + 1,
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+
+    if (attempt < 3) {
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
   }
+
+  return "";
 }
 
 async function updateOrderContactPhone(admin: AdminClient, orderId: string, phone: string) {
